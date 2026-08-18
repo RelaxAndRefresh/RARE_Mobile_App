@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
-import '../../core/routes/route_names.dart';
 import '../../widgets/buttons/primary_button.dart';
 import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
