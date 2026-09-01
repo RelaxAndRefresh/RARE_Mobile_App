@@ -1,21 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/routes/route_names.dart';
+import '../../providers/profile_provider.dart';
 import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
 import '../../widgets/tiles/list_tile.dart';
 import 'package:go_router/go_router.dart';
 
-/// Screen 33 – Profile Hub
-/// A central account directory, not a decorative profile page.
-/// Houses links to settings, privacy, and account management.
-class ProfileHubScreen extends StatelessWidget {
+class ProfileHubScreen extends ConsumerStatefulWidget {
   const ProfileHubScreen({super.key});
 
   @override
+  ConsumerState<ProfileHubScreen> createState() => _ProfileHubScreenState();
+}
+
+class _ProfileHubScreenState extends ConsumerState<ProfileHubScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(profileProvider.notifier).loadAll();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileProvider);
+    final user = profileState.user;
+    final isLoading = profileState.isLoading;
+    final error = profileState.error;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -27,64 +44,172 @@ class ProfileHubScreen extends StatelessWidget {
         padding: const EdgeInsets.all(AppSizes.paddingMedium),
         child: Column(
           children: [
-            // Main list of links
             Expanded(
-              child: ListView(
-                children: const [
-                  ListTileWidget(
-                    title: 'Settings',
-                    trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-                  ),
-                  ListTileWidget(
-                    title: 'Privacy Dashboard',
-                    trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-                  ),
-                  ListTileWidget(
-                    title: 'Cycle Calendar',
-                    trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-                  ),
-                  ListTileWidget(
-                    title: 'Order & Booking History',
-                    trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-                  ),
-                  ListTileWidget(
-                    title: 'Credits Ledger',
-                    trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-                  ),
-                  ListTileWidget(
-                    title: 'Account Details',
-                    trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-                  ),
-                  ListTileWidget(
-                    title: 'The Kill Switch',
-                    trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-                  ),
-                ],
-              ),
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.rose),
+                    )
+                  : error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Failed to load profile.',
+                                style: TextStyles.bodyMedium.copyWith(
+                                  color: AppColors.terracotta,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              GhostButton(
+                                label: 'Retry',
+                                onPressed: () =>
+                                    ref.read(profileProvider.notifier).loadAll(),
+                                width: null,
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView(
+                          children: [
+                            if (user != null) ...[
+                              RareCard(
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: AppColors.linen,
+                                      child: Text(
+                                        user.name.isNotEmpty
+                                            ? user.name[0].toUpperCase()
+                                            : '?',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          color: AppColors.mocha,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            user.name,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: AppColors.mocha,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            user.email,
+                                            style: TextStyles.bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            ListTileWidget(
+                              title: 'Settings',
+                              trailing: const Icon(Icons.chevron_right,
+                                  color: AppColors.rose),
+                              onTap: () => context.go(RouteNames.settings),
+                            ),
+                            ListTileWidget(
+                              title: 'Privacy Dashboard',
+                              trailing: const Icon(Icons.chevron_right,
+                                  color: AppColors.rose),
+                              onTap: () =>
+                                  context.go(RouteNames.privacyDashboard),
+                            ),
+                            ListTileWidget(
+                              title: 'Cycle Calendar',
+                              trailing: const Icon(Icons.chevron_right,
+                                  color: AppColors.rose),
+                              onTap: () =>
+                                  context.go(RouteNames.cycleCalendar),
+                            ),
+                            ListTileWidget(
+                              title: 'Order & Booking History',
+                              trailing: const Icon(Icons.chevron_right,
+                                  color: AppColors.rose),
+                              onTap: () => context.go(RouteNames.orderHistory),
+                            ),
+                            ListTileWidget(
+                              title: 'Credits Ledger',
+                              trailing: const Icon(Icons.chevron_right,
+                                  color: AppColors.rose),
+                              onTap: () =>
+                                  context.go(RouteNames.creditsLedger),
+                            ),
+                            ListTileWidget(
+                              title: 'Account Details',
+                              trailing: const Icon(Icons.chevron_right,
+                                  color: AppColors.rose),
+                              onTap: () =>
+                                  context.go(RouteNames.accountDetails),
+                            ),
+                            ListTileWidget(
+                              title: 'The Kill Switch',
+                              trailing: const Icon(Icons.chevron_right,
+                                  color: AppColors.rose),
+                              onTap: () => context.go(RouteNames.killSwitch),
+                            ),
+                          ],
+                        ),
             ),
-            // Bottom card – Connect RARE Account (for anonymous users)
-            RareCard(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Connected as anon_profile',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.mocha,
+            if (user != null && user.email.isEmpty)
+              RareCard(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Connected as ${user.name}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.mocha,
+                      ),
                     ),
-                  ),
-                  GhostButton(
-                    label: 'Connect RARE Account',
-                    onPressed: () {
-                      // Navigate to Account Sync (Screen 3)
-                      context.go(RouteNames.accountSync);
-                    },
-                    width: null,
-                  ),
-                ],
+                    GhostButton(
+                      label: 'Connect RARE Account',
+                      onPressed: () {
+                        context.go(RouteNames.accountSync);
+                      },
+                      width: null,
+                    ),
+                  ],
+                ),
               ),
-            ),
+            if (user == null && !isLoading)
+              RareCard(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Connected as anon_profile',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.mocha,
+                      ),
+                    ),
+                    GhostButton(
+                      label: 'Connect RARE Account',
+                      onPressed: () {
+                        context.go(RouteNames.accountSync);
+                      },
+                      width: null,
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 8),
           ],
         ),

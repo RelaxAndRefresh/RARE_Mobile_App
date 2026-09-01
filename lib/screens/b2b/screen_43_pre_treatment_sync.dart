@@ -1,36 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
-import '../../core/theme/text_styles.dart';
 import '../../core/routes/route_names.dart';
+import '../../core/theme/text_styles.dart';
+import '../../providers/practitioner_provider.dart';
 import '../../widgets/buttons/primary_button.dart';
 import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
 import '../../widgets/inputs/toggle_row.dart';
-import 'package:go_router/go_router.dart';
 
-/// Screen 43 – Pre-Treatment Data Sync
-/// Phase 4: Sovereign B2B OS.
-/// Triggered after booking is confirmed, never during checkout.
-/// Granular per-category consent with "heads-up, not prerequisite" framing.
-class PreTreatmentSyncScreen extends StatefulWidget {
+class PreTreatmentSyncScreen extends ConsumerStatefulWidget {
   const PreTreatmentSyncScreen({super.key});
 
   @override
-  State<PreTreatmentSyncScreen> createState() => _PreTreatmentSyncScreenState();
+  ConsumerState<PreTreatmentSyncScreen> createState() =>
+      _PreTreatmentSyncScreenState();
 }
 
-class _PreTreatmentSyncScreenState extends State<PreTreatmentSyncScreen> {
-  // Granular consent toggles
-  bool shareSkinLogs = true;
-  bool shareInsights = true;
-  bool shareRoutine = true;
-
-  // Practitioner name (simulated from booking data)
-  final String practitionerName = 'Anjali';
-
+class _PreTreatmentSyncScreenState
+    extends ConsumerState<PreTreatmentSyncScreen> {
   @override
   Widget build(BuildContext context) {
+    final consentState = ref.watch(preTreatmentConsentProvider);
+    final clientState = ref.watch(clientSummaryProvider);
+    final practitionerName = clientState.client?.userName ?? 'your practitioner';
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -43,11 +39,9 @@ class _PreTreatmentSyncScreenState extends State<PreTreatmentSyncScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // "Heads-up, not prerequisite" framing card
             RareCard(
               child: Column(
                 children: [
-                  // Header icon
                   const Icon(
                     Icons.people_outline,
                     size: 32,
@@ -70,9 +64,7 @@ class _PreTreatmentSyncScreenState extends State<PreTreatmentSyncScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Granular consent toggles
-            Text(
+            const Text(
               'WHAT TO SHARE',
               style: TextStyle(
                 fontSize: 11,
@@ -81,29 +73,28 @@ class _PreTreatmentSyncScreenState extends State<PreTreatmentSyncScreen> {
               ),
             ),
             const SizedBox(height: 8),
-
             ToggleRow(
               title: 'Skin logs',
               subtitle: 'Recent skin condition logs and photos',
-              value: shareSkinLogs,
-              onChanged: (val) => setState(() => shareSkinLogs = val),
+              value: consentState.shareSkinLogs,
+              onChanged: (_) =>
+                  ref.read(preTreatmentConsentProvider.notifier).toggleSkinLogs(),
             ),
             ToggleRow(
               title: 'Recent insights',
               subtitle: 'Patterns and correlations from the Epistemic Ladder',
-              value: shareInsights,
-              onChanged: (val) => setState(() => shareInsights = val),
+              value: consentState.shareInsights,
+              onChanged: (_) =>
+                  ref.read(preTreatmentConsentProvider.notifier).toggleInsights(),
             ),
             ToggleRow(
               title: 'Routine history',
               subtitle: 'Your current Baseline Routine and product usage',
-              value: shareRoutine,
-              onChanged: (val) => setState(() => shareRoutine = val),
+              value: consentState.shareRoutine,
+              onChanged: (_) =>
+                  ref.read(preTreatmentConsentProvider.notifier).toggleRoutine(),
             ),
-
             const SizedBox(height: 8),
-
-            // Privacy assurance note
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -111,8 +102,8 @@ class _PreTreatmentSyncScreenState extends State<PreTreatmentSyncScreen> {
                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                 border: Border.all(color: AppColors.divider, width: 0.5),
               ),
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(
                     Icons.shield_outlined,
                     size: 14,
@@ -132,13 +123,10 @@ class _PreTreatmentSyncScreenState extends State<PreTreatmentSyncScreen> {
               ),
             ),
             const Spacer(),
-
-            // Action buttons
             PrimaryButton(
               label: 'Share Selected',
+              isLoading: consentState.isLoading,
               onPressed: () {
-                // In a real app, save consent preferences
-                // and navigate to the next screen
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -148,7 +136,6 @@ class _PreTreatmentSyncScreenState extends State<PreTreatmentSyncScreen> {
                     duration: const Duration(seconds: 2),
                   ),
                 );
-                // Navigate to post-treatment protocol (Screen 44)
                 context.go(RouteNames.postTreatmentProtocol);
               },
             ),
@@ -156,8 +143,6 @@ class _PreTreatmentSyncScreenState extends State<PreTreatmentSyncScreen> {
             GhostButton(
               label: 'Skip This Step',
               onPressed: () {
-                // Skip data sharing entirely
-                // The practitioner will work with in-room assessment only
                 context.go(RouteNames.postTreatmentProtocol);
               },
             ),

@@ -1,16 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
-import '../../core/routes/route_names.dart';
 import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
+import '../../providers/skin_provider.dart';
 
-class QuickLogScreen extends StatelessWidget {
+class QuickLogScreen extends ConsumerStatefulWidget {
   const QuickLogScreen({super.key});
 
   @override
+  ConsumerState<QuickLogScreen> createState() => _QuickLogScreenState();
+}
+
+class _QuickLogScreenState extends ConsumerState<QuickLogScreen> {
+  final Set<String> _loggedItems = {};
+
+  void _logItem(String type) async {
+    setState(() => _loggedItems.add(type));
+    await ref.read(skinProvider.notifier).createLog({
+      'tags': [type],
+      'condition': type,
+      'quick_log': true,
+    });
+    if (!mounted) return;
+    final error = ref.read(skinProvider).error;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not log. Try again.'),
+          backgroundColor: AppColors.terracotta,
+        ),
+      );
+      ref.read(skinProvider.notifier).clearError();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$type logged.'),
+          backgroundColor: AppColors.mocha,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final skinState = ref.watch(skinProvider);
+    final isLogging = skinState.isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(title: const Text('Quick Log')),
@@ -21,50 +60,23 @@ class QuickLogScreen extends StatelessWidget {
           children: [
             Text('One-tap log', style: TextStyles.displayMedium),
             const SizedBox(height: 16),
-            RareCard(
-              child: Row(
-                children: [
-                  const Icon(Icons.water_drop, color: AppColors.rose),
-                  const SizedBox(width: 8),
-                  const Text('Caffeine'),
-                  const Spacer(),
-                  GhostButton(
-                    label: 'Log',
-                    onPressed: () {},
-                    width: null,
-                  ),
-                ],
-              ),
+            _buildLogItem(
+              icon: Icons.water_drop,
+              label: 'Caffeine',
+              isLogged: _loggedItems.contains('Caffeine'),
+              isLogging: isLogging,
             ),
-            RareCard(
-              child: Row(
-                children: [
-                  const Icon(Icons.water_drop, color: AppColors.rose),
-                  const SizedBox(width: 8),
-                  const Text('Alcohol'),
-                  const Spacer(),
-                  GhostButton(
-                    label: 'Log',
-                    onPressed: () {},
-                    width: null,
-                  ),
-                ],
-              ),
+            _buildLogItem(
+              icon: Icons.water_drop,
+              label: 'Alcohol',
+              isLogged: _loggedItems.contains('Alcohol'),
+              isLogging: isLogging,
             ),
-            RareCard(
-              child: Row(
-                children: [
-                  const Icon(Icons.show_chart, color: AppColors.rose),
-                  const SizedBox(width: 8),
-                  const Text('Energy'),
-                  const Spacer(),
-                  GhostButton(
-                    label: 'Log',
-                    onPressed: () {},
-                    width: null,
-                  ),
-                ],
-              ),
+            _buildLogItem(
+              icon: Icons.show_chart,
+              label: 'Energy',
+              isLogged: _loggedItems.contains('Energy'),
+              isLogging: isLogging,
             ),
             const SizedBox(height: 16),
             Text(
@@ -74,6 +86,32 @@ class QuickLogScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLogItem({
+    required IconData icon,
+    required String label,
+    required bool isLogged,
+    required bool isLogging,
+  }) {
+    return RareCard(
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.rose),
+          const SizedBox(width: 8),
+          Text(label),
+          const Spacer(),
+          if (isLogged)
+            const Icon(Icons.check_circle, color: AppColors.mocha, size: 20)
+          else
+            GhostButton(
+              label: 'Log',
+              onPressed: isLogging ? null : () => _logItem(label),
+              width: null,
+            ),
+        ],
       ),
     );
   }

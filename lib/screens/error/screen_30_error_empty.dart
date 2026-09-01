@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
 import '../../widgets/cards/rare_card.dart';
+import '../../providers/checkin_provider.dart';
+import '../../providers/skin_provider.dart';
+import '../../providers/notification_provider.dart';
 
-/// Screen 30 – Error/Empty States
-/// Displays a collection of calm, brand-voiced empty and error state
-/// examples as specified in Section 7.1 of the Master Document.
-class ErrorEmptyScreen extends StatelessWidget {
+class ErrorEmptyScreen extends ConsumerWidget {
   const ErrorEmptyScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final checkinState = ref.watch(checkinProvider);
+    final skinState = ref.watch(skinProvider);
+    final notifState = ref.watch(notificationProvider);
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -22,43 +27,40 @@ class ErrorEmptyScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(AppSizes.paddingMedium),
         child: ListView(
-          children: const [
-            // Network/connection error
-            _StateCard(
-              label: 'ERROR',
-              message: 'Something feels off. Let\'s try again in a moment.',
-            ),
-            // Environmental data fetch failure
-            _StateCard(
+          children: [
+            if (checkinState.error != null)
+              _StateCard(
+                label: 'ERROR',
+                message: 'Something feels off. Let\'s try again in a moment.',
+              ),
+            const _StateCard(
               label: 'ENVIRONMENT',
               message:
                   'We couldn\'t check the air in your area today. We\'ll keep trying.',
             ),
-            // Home screen, Day 1-2 (no data yet)
             _StateCard(
               label: 'EARLY DAYS',
-              message: 'We are listening. Keep checking in.',
+              message: checkinState.todayCheckin == null
+                  ? 'We are listening. Keep checking in.'
+                  : 'You\'ve started. Keep the rhythm going.',
             ),
-            // The Shelf, before purchases
             _StateCard(
               label: 'EMPTY SHELF',
               message:
                   'Your shelf is quiet for now. When you bring RARE into your routine, it will appear here to be tracked.',
             ),
-            // The Quiet Inbox, no missed nudges
             _StateCard(
               label: 'QUIET INBOX',
-              message:
-                  'Nothing waiting for you. We\'ll let you know when something needs your attention.',
+              message: notifState.notifications.isEmpty
+                  ? 'Nothing waiting for you. We\'ll let you know when something needs your attention.'
+                  : '${notifState.unreadCount} unread notification${notifState.unreadCount == 1 ? '' : 's'} waiting for you.',
             ),
-            // Routine Intervention Log, no interventions yet
-            _StateCard(
+            const _StateCard(
               label: 'NO INTERVENTIONS',
               message:
                   'No changes to your routine yet. When we adjust something, you\'ll see it here.',
             ),
-            // Credits Ledger, early days
-            _StateCard(
+            const _StateCard(
               label: 'EARLY CREDITS',
               message:
                   'Your balance is building. Keep checking in — credits accumulate with every ritual.',
@@ -70,7 +72,6 @@ class ErrorEmptyScreen extends StatelessWidget {
   }
 }
 
-/// A reusable card for displaying an empty/error state.
 class _StateCard extends StatelessWidget {
   final String label;
   final String message;

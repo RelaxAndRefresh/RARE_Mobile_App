@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/routes/route_names.dart';
+import '../../providers/commerce_provider.dart';
+import '../../providers/booking_provider.dart';
 import '../../widgets/buttons/primary_button.dart';
 import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
-import 'package:go_router/go_router.dart';
 
-/// Screen 39 – Checkout Success / Failure State
-/// Transitional overlay shown after a purchase or booking.
-/// Displays success confirmation or honest failure with retry option.
-class CheckoutStateScreen extends StatelessWidget {
+class CheckoutStateScreen extends ConsumerWidget {
   final bool isSuccess;
 
   const CheckoutStateScreen({
@@ -20,7 +20,10 @@ class CheckoutStateScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final commerceState = ref.watch(commerceProvider);
+    final bookingState = ref.watch(bookingProvider);
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: Center(
@@ -30,9 +33,9 @@ class CheckoutStateScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isSuccess) ...[
-                _buildSuccessContent(context),
+                _buildSuccessContent(context, ref),
               ] else ...[
-                _buildFailureContent(context),
+                _buildFailureContent(context, ref),
               ],
             ],
           ),
@@ -41,7 +44,7 @@ class CheckoutStateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSuccessContent(BuildContext context) {
+  Widget _buildSuccessContent(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
         const Icon(
@@ -59,7 +62,8 @@ class CheckoutStateScreen extends StatelessWidget {
         GhostButton(
           label: 'Return to Wellness',
           onPressed: () {
-            // Navigate back to home
+            ref.read(commerceProvider.notifier).clearError();
+            ref.read(bookingProvider.notifier).clearError();
             context.go(RouteNames.home);
           },
         ),
@@ -67,7 +71,7 @@ class CheckoutStateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFailureContent(BuildContext context) {
+  Widget _buildFailureContent(BuildContext context, WidgetRef ref) {
     return RareCard(
       child: Column(
         children: [
@@ -98,7 +102,8 @@ class CheckoutStateScreen extends StatelessWidget {
                 child: PrimaryButton(
                   label: 'Retry',
                   onPressed: () {
-                    // Go back to the booking screen to retry
+                    ref.read(bookingProvider.notifier).clearError();
+                    ref.read(commerceProvider.notifier).clearError();
                     Navigator.pop(context);
                   },
                 ),
@@ -108,6 +113,8 @@ class CheckoutStateScreen extends StatelessWidget {
                 child: GhostButton(
                   label: 'Back to Wellness',
                   onPressed: () {
+                    ref.read(bookingProvider.notifier).clearError();
+                    ref.read(commerceProvider.notifier).clearError();
                     context.go(RouteNames.home);
                   },
                 ),

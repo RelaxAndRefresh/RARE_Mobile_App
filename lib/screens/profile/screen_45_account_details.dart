@@ -1,38 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/routes/route_names.dart';
+import '../../providers/profile_provider.dart';
 import '../../widgets/buttons/primary_button.dart';
 import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
 import 'package:go_router/go_router.dart';
 
-/// Screen 45 – Account Details
-/// Editable fields for name, email, and phone number.
-/// Reached from Profile Hub (Screen 33).
-/// Email changes require OAuth re-authorization.
-/// Phone changes trigger OTP verification.
-class AccountDetailsScreen extends StatefulWidget {
+class AccountDetailsScreen extends ConsumerStatefulWidget {
   const AccountDetailsScreen({super.key});
 
   @override
-  State<AccountDetailsScreen> createState() => _AccountDetailsScreenState();
+  ConsumerState<AccountDetailsScreen> createState() =>
+      _AccountDetailsScreenState();
 }
 
-class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
-  // Controllers for form fields
-  final TextEditingController _nameController =
-      TextEditingController(text: 'Priya Sharma');
-  final TextEditingController _emailController =
-      TextEditingController(text: 'priya@example.com');
-  final TextEditingController _phoneController =
-      TextEditingController(text: '+91 98765 43210');
+class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
-  // Track which fields have been edited
   bool _nameEdited = false;
   bool _emailEdited = false;
   bool _phoneEdited = false;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(profileProvider.notifier).loadAll();
+    });
+  }
 
   @override
   void dispose() {
@@ -42,8 +44,24 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     super.dispose();
   }
 
+  void _initControllersIfNeeded(dynamic user) {
+    if (!_initialized && user != null) {
+      _nameController.text = user.name ?? '';
+      _emailController.text = user.email ?? '';
+      _phoneController.text = user.phone ?? '';
+      _initialized = true;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileProvider);
+    final user = profileState.user;
+    final isLoading = profileState.isLoading;
+    final error = profileState.error;
+
+    _initControllersIfNeeded(user);
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -51,60 +69,77 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
         backgroundColor: AppColors.cream,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppSizes.paddingMedium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Edit your personal information',
-              style: TextStyles.bodyMedium,
-            ),
-            const SizedBox(height: 20),
-
-            // Name field
-            _buildDetailField(
-              label: 'NAME',
-              controller: _nameController,
-              hint: 'Enter your full name',
-              onChanged: (_) => setState(() => _nameEdited = true),
-            ),
-            const SizedBox(height: 16),
-
-            // Email field (with OAuth note)
-            _buildDetailField(
-              label: 'EMAIL',
-              controller: _emailController,
-              hint: 'Enter your email address',
-              onChanged: (_) => setState(() => _emailEdited = true),
-              subtitle: 'Email changes require OAuth re-authorization',
-              isEmail: true,
-            ),
-            const SizedBox(height: 16),
-
-            // Phone field (with OTP note)
-            _buildDetailField(
-              label: 'PHONE NUMBER',
-              controller: _phoneController,
-              hint: 'Enter your phone number',
-              onChanged: (_) => setState(() => _phoneEdited = true),
-              subtitle: 'Phone changes trigger an OTP verification',
-              isPhone: true,
-            ),
-
-            const Spacer(),
-
-            // Save button
-            PrimaryButton(
-              label: 'Save Changes',
-              onPressed: _nameEdited || _emailEdited || _phoneEdited
-                  ? () => _handleSave(context)
-                  : null,
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+      body: isLoading && user == null
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.rose),
+            )
+          : error != null && user == null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Failed to load account details.',
+                        style: TextStyles.bodyMedium.copyWith(
+                          color: AppColors.terracotta,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GhostButton(
+                        label: 'Retry',
+                        onPressed: () =>
+                            ref.read(profileProvider.notifier).loadAll(),
+                        width: null,
+                      ),
+                    ],
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(AppSizes.paddingMedium),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Edit your personal information',
+                        style: TextStyles.bodyMedium,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildDetailField(
+                        label: 'NAME',
+                        controller: _nameController,
+                        hint: 'Enter your full name',
+                        onChanged: (_) => setState(() => _nameEdited = true),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDetailField(
+                        label: 'EMAIL',
+                        controller: _emailController,
+                        hint: 'Enter your email address',
+                        onChanged: (_) => setState(() => _emailEdited = true),
+                        subtitle: 'Email changes require OAuth re-authorization',
+                        isEmail: true,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDetailField(
+                        label: 'PHONE NUMBER',
+                        controller: _phoneController,
+                        hint: 'Enter your phone number',
+                        onChanged: (_) => setState(() => _phoneEdited = true),
+                        subtitle: 'Phone changes trigger an OTP verification',
+                        isPhone: true,
+                      ),
+                      const Spacer(),
+                      PrimaryButton(
+                        label: isLoading ? 'Saving...' : 'Save Changes',
+                        onPressed: (_nameEdited || _emailEdited || _phoneEdited) &&
+                                !isLoading
+                            ? () => _handleSave(context)
+                            : null,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
     );
   }
 
@@ -178,23 +213,14 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   }
 
   void _handleSave(BuildContext context) {
-    // In a real app, this would:
-    // 1. Validate inputs
-    // 2. If email changed: show OAuth re-authorization dialog
-    // 3. If phone changed: show OTP verification dialog
-    // 4. Save to backend
-
     if (_emailEdited) {
       _showEmailReauthDialog(context);
       return;
     }
-
     if (_phoneEdited) {
       _showOTPDialog(context);
       return;
     }
-
-    // If only name changed, save directly
     _saveChanges(context);
   }
 
@@ -248,7 +274,6 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
             label: 'Continue with OAuth',
             onPressed: () {
               Navigator.pop(context);
-              // Simulate OAuth flow
               _showOAuthInProgress(context);
             },
             width: null,
@@ -319,7 +344,6 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
           PrimaryButton(
             label: 'Verify & Save',
             onPressed: () {
-              // In a real app, verify OTP
               Navigator.pop(context);
               _saveChanges(context);
             },
@@ -361,15 +385,20 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
       ),
     );
 
-    // Simulate OAuth completion after 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
       _saveChanges(context);
     });
   }
 
   void _saveChanges(BuildContext context) {
-    // In a real app: save to backend, update user profile state
+    final data = <String, dynamic>{};
+    if (_nameEdited) data['name'] = _nameController.text;
+    if (_emailEdited) data['email'] = _emailController.text;
+    if (_phoneEdited) data['phone'] = _phoneController.text;
+
+    ref.read(profileProvider.notifier).updateAccountDetails(data);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Account details updated successfully.'),
@@ -378,14 +407,12 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
       ),
     );
 
-    // Reset edit flags
     setState(() {
       _nameEdited = false;
       _emailEdited = false;
       _phoneEdited = false;
     });
 
-    // Navigate back to Profile Hub
     Future.delayed(const Duration(milliseconds: 500), () {
       context.go(RouteNames.profileHub);
     });
