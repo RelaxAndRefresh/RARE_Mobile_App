@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     STORAGE_TYPE: str = "local"
     LOCAL_STORAGE_PATH: str = "./uploads"
 
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
+
     RAZORPAY_KEY_ID: Optional[str] = None
     RAZORPAY_KEY_SECRET: Optional[str] = None
 
@@ -30,3 +32,11 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if settings.JWT_SECRET == "your-super-secret-key-change-in-production":
+    import os
+    if os.environ.get("ENVIRONMENT") == "production":
+        raise RuntimeError(
+            "JWT_SECRET must be changed from the default value in production. "
+            "Set the JWT_SECRET environment variable."
+        )

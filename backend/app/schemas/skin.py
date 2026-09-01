@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -6,7 +6,7 @@ from datetime import datetime
 class SkinLogCreate(BaseModel):
     tags: List[str] = []
     notes: Optional[str] = None
-    rating: Optional[int] = None
+    rating: Optional[int] = Field(None, ge=1, le=10)
 
 
 class SkinLogResponse(BaseModel):

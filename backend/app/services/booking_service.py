@@ -1,12 +1,8 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.exceptions import NotFoundError, ValidationError
-from app.db.models import TreatmentSession, PractitionerClient
-
-
-# Placeholder services - booking service manages practitioner-client sessions
-# In production, this would integrate with a calendar/availability system
+from app.db.models import TreatmentSession, PractitionerClient, User
 
 
 def get_services(db: Session) -> list:
@@ -20,16 +16,18 @@ def get_services(db: Session) -> list:
 def get_availability(db: Session, practitioner_id: int, date_str: str) -> list:
     from datetime import date
     d = date.fromisoformat(date_str)
+    existing = db.query(TreatmentSession).filter(
+        TreatmentSession.practitioner_id == practitioner_id,
+    ).all()
+    booked_hours = set()
+    for s in existing:
+        if hasattr(s, "scheduled_at") and s.scheduled_at:
+            if s.scheduled_at.date() == d:
+                booked_hours.add(s.scheduled_at.hour)
     slots = []
     for hour in range(10, 18):
-        slots.append({
-            "time": f"{hour:02d}:00",
-            "available": True,
-        })
-        slots.append({
-            "time": f"{hour:02d}:30",
-            "available": True,
-        })
+        slots.append({"time": f"{hour:02d}:00", "available": hour not in booked_hours})
+        slots.append({"time": f"{hour:02d}:30", "available": hour not in booked_hours})
     return slots
 
 
@@ -46,6 +44,9 @@ def create_booking(db: Session, user_id: int, data: dict) -> dict:
         )
         db.add(practitioner)
 
+    practitioner_user = db.query(User).filter(User.id == data["practitioner_id"]).first()
+    practitioner_name = practitioner_user.name if practitioner_user else "Practitioner"
+
     session = TreatmentSession(
         practitioner_id=data["practitioner_id"],
         client_id=user_id,
@@ -57,12 +58,12 @@ def create_booking(db: Session, user_id: int, data: dict) -> dict:
     db.refresh(session)
     return {
         "id": session.id,
-        "service_name": "Consultation",
-        "practitioner_name": "Practitioner",
-        "scheduled_at": data.get("scheduled_at", datetime.utcnow()),
+        "service_name": session.session_type,
+        "practitioner_name": practitioner_name,
+        "scheduled_at": data.get("scheduled_at", datetime.now(timezone.utc).isoformat()),
         "status": "confirmed",
         "notes": data.get("notes"),
-        "created_at": session.created_at,
+        "created_at": str(session.created_at),
     }
 
 
@@ -80,15 +81,16 @@ def get_bookings(db: Session, user_id: int) -> list:
     sessions = db.query(TreatmentSession).filter(
         TreatmentSession.client_id == user_id,
     ).order_by(TreatmentSession.created_at.desc()).all()
-    return [
-        {
+    result = []
+    for s in sessions:
+        pract_user = db.query(User).filter(User.id == s.practitioner_id).first()
+        result.append({
             "id": s.id,
             "service_name": s.session_type,
-            "practitioner_name": "Practitioner",
-            "scheduled_at": s.created_at,
+            "practitioner_name": pract_user.name if pract_user else "Practitioner",
+            "scheduled_at": str(s.created_at),
             "status": "confirmed",
             "notes": s.pre_treatment_notes,
-            "created_at": s.created_at,
-        }
-        for s in sessions
-    ]
+            "created_at": str(s.created_at),
+        })
+    return result

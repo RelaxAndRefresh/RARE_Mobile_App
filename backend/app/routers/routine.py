@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db_session, get_current_active_user
 from app.db.models import User
-from app.schemas.routine import RoutineCreate, RoutineResponse, RoutineInterventionResponse
+from app.schemas.routine import RoutineCreate, RoutineResponse, RoutineInterventionResponse, RoutineUpdate
 from app.services import routine_service
 
 router = APIRouter(prefix="/routine", tags=["Routine"])
@@ -22,8 +22,9 @@ def get_routines(db: Session = Depends(get_db_session), current_user: User = Dep
 
 
 @router.put("/{routine_id}")
-def update_routine(routine_id: int, data: dict, db: Session = Depends(get_db_session), current_user: User = Depends(get_current_active_user)):
-    routine = routine_service.update_routine(db, current_user.id, routine_id, data)
+def update_routine(routine_id: int, data: RoutineUpdate, db: Session = Depends(get_db_session), current_user: User = Depends(get_current_active_user)):
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    routine = routine_service.update_routine(db, current_user.id, routine_id, update_data)
     return routine
 
 

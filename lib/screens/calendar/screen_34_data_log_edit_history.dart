@@ -268,28 +268,11 @@ class _DataLogEditHistoryScreenState
       }
     }
 
-    final random = day % 3;
     setState(() {
-      switch (random) {
-        case 0:
-          _sleep = '6h 45m';
-          _mood = 'Tired';
-          _skin = 'Reactive';
-          _hydration = '3 taps';
-          break;
-        case 1:
-          _sleep = '8h 10m';
-          _mood = 'Great';
-          _skin = 'Calm';
-          _hydration = '6 taps';
-          break;
-        default:
-          _sleep = '7h 0m';
-          _mood = 'Good';
-          _skin = 'Dull';
-          _hydration = '4 taps';
-          break;
-      }
+      _sleep = '--';
+      _mood = 'No data';
+      _skin = 'No data';
+      _hydration = '--';
     });
   }
 

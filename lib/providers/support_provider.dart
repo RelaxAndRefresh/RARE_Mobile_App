@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/api_models.dart';
 import '../data/repositories/support_repository.dart';
+import 'auth_provider.dart';
 
 class SupportState {
   final bool isLoading;
@@ -36,7 +37,8 @@ class SupportState {
 }
 
 final supportRepositoryProvider = Provider<SupportRepository>((ref) {
-  return SupportRepository();
+  final authRepo = ref.watch(authRepositoryProvider);
+  return SupportRepository(apiClient: authRepo.apiClient);
 });
 
 final supportProvider =

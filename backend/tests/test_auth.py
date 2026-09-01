@@ -20,7 +20,7 @@ async def test_signup_success(client):
 @pytest.mark.asyncio
 async def test_signup_anonymous(client):
     response = await client.post(
-        "/api/v1/auth/signup",
+        "/api/v1/auth/anonymous",
         json={"name": "Anonymous"},
     )
     assert response.status_code == 201

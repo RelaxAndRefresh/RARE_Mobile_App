@@ -19,7 +19,7 @@ class KillSwitchScreen extends ConsumerStatefulWidget {
 
 class _KillSwitchScreenState extends ConsumerState<KillSwitchScreen> {
   bool _showConfirmation = false;
-  bool _hasActiveBooking = true;
+  bool _hasActiveBooking = false;
 
   @override
   Widget build(BuildContext context) {

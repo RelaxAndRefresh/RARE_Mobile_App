@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/rituals_repository.dart';
+import 'auth_provider.dart';
 
 class RitualsState {
   final bool isLoading;
@@ -31,7 +32,8 @@ class RitualsState {
 }
 
 final ritualsRepositoryProvider = Provider<RitualsRepository>((ref) {
-  return RitualsRepository();
+  final authRepo = ref.watch(authRepositoryProvider);
+  return RitualsRepository(apiClient: authRepo.apiClient);
 });
 
 final ritualsProvider =

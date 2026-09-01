@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import hmac
 import secrets
@@ -86,7 +86,7 @@ def checkout(db: Session, user_id: int, shipping_address: dict, payment_method: 
     shipping = 0 if subtotal >= 500 else 49
     total = subtotal + tax + shipping
 
-    order_number = f"RARE-{secrets.token_hex(4).upper()}-{int(datetime.utcnow().timestamp())}"
+    order_number = f"RARE-{secrets.token_hex(4).upper()}-{int(datetime.now(timezone.utc).timestamp())}"
     order = Order(
         user_id=user_id,
         order_number=order_number,
@@ -143,14 +143,14 @@ def verify_payment(db: Session, user_id: int, order_id: int, payment_id: str, si
             signature=signature,
             amount_inr=order.total_inr,
             status=PaymentStatus.captured,
-            verified_at=datetime.utcnow(),
+            verified_at=datetime.now(timezone.utc),
         )
         db.add(payment)
     else:
         payment.payment_id = payment_id
         payment.signature = signature
         payment.status = PaymentStatus.captured
-        payment.verified_at = datetime.utcnow()
+        payment.verified_at = datetime.now(timezone.utc)
 
     order.status = OrderStatus.confirmed
     db.commit()

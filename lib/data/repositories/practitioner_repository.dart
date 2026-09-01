@@ -27,11 +27,11 @@ class PractitionerRepository {
 
     final authResponse = AuthResponse.fromJson(response);
     await _secureStorage.write(
-      key: 'access_token',
+      key: 'practitioner_access_token',
       value: authResponse.tokens.accessToken,
     );
     await _secureStorage.write(
-      key: 'refresh_token',
+      key: 'practitioner_refresh_token',
       value: authResponse.tokens.refreshToken,
     );
     return authResponse;

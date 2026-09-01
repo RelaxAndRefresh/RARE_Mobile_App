@@ -21,7 +21,7 @@ def signup(db: Session, email: str = None, name: str = None, password: str = Non
     user = User(
         email=email,
         name=name,
-        password_hash=get_password_hash(password) if password else get_password_hash("anonymous临时密码"),
+        password_hash=get_password_hash(password) if password else get_password_hash("anonymous-dev-password"),
         is_anonymous=not password,
     )
     db.add(user)

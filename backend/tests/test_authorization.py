@@ -16,10 +16,7 @@ async def test_user_cannot_access_admin_dashboard(client, test_user, auth_header
         "/api/v1/admin/dashboard",
         headers=auth_headers,
     )
-    assert response.status_code == 200
-    data = response.json()
-    assert "error" in data
-    assert "Admin access required" in data["error"]
+    assert response.status_code == 403
 
 
 @pytest.mark.asyncio
@@ -28,9 +25,7 @@ async def test_user_cannot_access_admin_users(client, test_user, auth_headers):
         "/api/v1/admin/users",
         headers=auth_headers,
     )
-    assert response.status_code == 200
-    data = response.json()
-    assert "error" in data
+    assert response.status_code == 403
 
 
 @pytest.mark.asyncio

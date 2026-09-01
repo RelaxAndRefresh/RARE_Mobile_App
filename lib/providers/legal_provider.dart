@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/legal_repository.dart';
+import 'auth_provider.dart';
 
 class LegalState {
   final bool isLoading;
@@ -27,7 +28,8 @@ class LegalState {
 }
 
 final legalRepositoryProvider = Provider<LegalRepository>((ref) {
-  return LegalRepository();
+  final authRepo = ref.watch(authRepositoryProvider);
+  return LegalRepository(apiClient: authRepo.apiClient);
 });
 
 final legalProvider =

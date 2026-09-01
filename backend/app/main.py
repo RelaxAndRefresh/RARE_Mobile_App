@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,10 +13,24 @@ from app.routers import (
     support, practitioner, admin,
 )
 
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in (settings.CORS_ORIGINS or "").split(",")
+    if origin.strip()
+] or ["http://localhost:3000", "http://localhost:8080"]
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
 app = FastAPI(
     title="RARE Mobile App API",
     description="Backend API for the RARE mobile application - personalized skincare and wellness platform",
     version="1.0.0",
+    lifespan=lifespan,
     openapi_tags=[
         {"name": "Authentication", "description": "User signup, login, and token management"},
         {"name": "Users", "description": "User profile and account management"},
@@ -43,10 +59,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 for exc_cls, handler in exception_handlers.items():
@@ -74,11 +90,6 @@ app.include_router(privacy.router, prefix="/api/v1")
 app.include_router(support.router, prefix="/api/v1")
 app.include_router(practitioner.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
-
-
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health")

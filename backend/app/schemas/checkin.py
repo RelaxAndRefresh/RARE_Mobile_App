@@ -1,14 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import date, datetime
 
 
 class DailyCheckinCreate(BaseModel):
-    checkin_type: str
-    sleep_hours: Optional[float] = None
-    mood: Optional[int] = None
-    energy: Optional[int] = None
-    stress: Optional[int] = None
+    checkin_type: str = Field(pattern=r"^(am|pm)$")
+    sleep_hours: Optional[float] = Field(None, ge=0, le=24)
+    mood: Optional[int] = Field(None, ge=1, le=10)
+    energy: Optional[int] = Field(None, ge=1, le=10)
+    stress: Optional[int] = Field(None, ge=1, le=10)
     skin_feel: Optional[str] = None
     tags: List[str] = []
     notes: Optional[str] = None

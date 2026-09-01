@@ -16,6 +16,12 @@ class RoutineCreate(BaseModel):
     steps: List[RoutineStepCreate] = []
 
 
+class RoutineUpdate(BaseModel):
+    name: Optional[str] = None
+    routine_type: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
 class RoutineResponse(BaseModel):
     id: int
     name: str

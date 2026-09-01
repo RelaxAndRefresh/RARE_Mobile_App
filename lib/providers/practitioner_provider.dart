@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/api_models.dart';
 import '../data/repositories/practitioner_repository.dart';
+import 'auth_provider.dart';
 
 class PractitionerAuthState {
   final bool isLoading;
@@ -112,7 +113,8 @@ class PreTreatmentConsentState {
 }
 
 final practitionerRepositoryProvider = Provider<PractitionerRepository>((ref) {
-  return PractitionerRepository();
+  final authRepo = ref.watch(authRepositoryProvider);
+  return PractitionerRepository(apiClient: authRepo.apiClient);
 });
 
 final practitionerAuthProvider =
