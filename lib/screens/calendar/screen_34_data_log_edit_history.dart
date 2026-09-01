@@ -96,9 +96,10 @@ class _DataLogEditHistoryScreenState
       } else {
         _mood = 'Excellent';
       }
-      _skin = todayCheckin.symptoms != null
-          ? (todayCheckin.symptoms['skin_condition'] ?? 'Normal')
-          : 'Calm';
+      final symptoms = todayCheckin.symptoms;
+      _skin = symptoms == null
+          ? 'Calm'
+          : (symptoms['skin_condition'] ?? 'Normal');
     }
 
     return Padding(
@@ -259,9 +260,10 @@ class _DataLogEditHistoryScreenState
           } else {
             _mood = 'Excellent';
           }
-          _skin = todayCheckin.symptoms != null
-              ? (todayCheckin.symptoms['skin_condition'] ?? 'Normal')
-              : 'Calm';
+          final symptoms = todayCheckin.symptoms;
+          _skin = symptoms == null
+              ? 'Calm'
+              : (symptoms['skin_condition'] ?? 'Normal');
           _hydration = '${checkinState.todayHydration.length} taps';
         });
         return;

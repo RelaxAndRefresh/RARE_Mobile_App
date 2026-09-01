@@ -214,6 +214,7 @@ class ApiClient {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
+      case DioExceptionType.transformTimeout:
         return NetworkException(
           message: 'Connection timed out. Please try again.',
         );

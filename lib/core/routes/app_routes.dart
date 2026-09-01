@@ -70,7 +70,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: RouteNames.splashReturning,
     redirect: (context, state) {
-      final isLoggedIn = authState.isAuthenticated;
+      final isLoggedIn = authState.status == AuthStatus.authenticated;
       final isPublicRoute = _publicRoutes.contains(state.matchedLocation);
 
       if (!isLoggedIn && !isPublicRoute) {

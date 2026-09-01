@@ -25,14 +25,6 @@ class SplashReturningScreen extends ConsumerStatefulWidget {
 
 class _SplashReturningScreenState extends ConsumerState<SplashReturningScreen> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authProvider.notifier).checkAuth();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
