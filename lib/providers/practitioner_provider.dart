@@ -30,7 +30,7 @@ class PractitionerAuthState {
 
 class ClientSummaryState {
   final bool isLoading;
-  final PractitionerClient? client;
+  final Map<String, dynamic>? client;
   final String? error;
 
   ClientSummaryState({
@@ -41,7 +41,7 @@ class ClientSummaryState {
 
   ClientSummaryState copyWith({
     bool? isLoading,
-    PractitionerClient? client,
+    Map<String, dynamic>? client,
     String? error,
   }) {
     return ClientSummaryState(
@@ -55,7 +55,7 @@ class ClientSummaryState {
 class TreatmentProtocolState {
   final bool isLoading;
   final Map<String, dynamic>? protocol;
-  final TreatmentSession? session;
+  final Map<String, dynamic>? session;
   final String? error;
 
   TreatmentProtocolState({
@@ -68,7 +68,7 @@ class TreatmentProtocolState {
   TreatmentProtocolState copyWith({
     bool? isLoading,
     Map<String, dynamic>? protocol,
-    TreatmentSession? session,
+    Map<String, dynamic>? session,
     String? error,
   }) {
     return TreatmentProtocolState(

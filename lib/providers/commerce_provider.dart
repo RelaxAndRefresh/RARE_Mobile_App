@@ -7,7 +7,7 @@ import 'auth_provider.dart';
 class CommerceState {
   final bool isLoading;
   final Cart? cart;
-  final List<Order> recentOrders;
+  final List<Map<String, dynamic>> recentOrders;
   final String? error;
 
   CommerceState({
@@ -20,7 +20,7 @@ class CommerceState {
   CommerceState copyWith({
     bool? isLoading,
     Cart? cart,
-    List<Order>? recentOrders,
+    List<Map<String, dynamic>>? recentOrders,
     String? error,
   }) {
     return CommerceState(
@@ -62,42 +62,41 @@ class CommerceNotifier extends StateNotifier<CommerceState> {
   }
 
   Future<void> addToCart({
-    required String productId,
+    required int productId,
     int quantity = 1,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final cart = await _repository.addToCart(
-        productId: productId,
-        quantity: quantity,
-      );
-      state = state.copyWith(isLoading: false, cart: cart);
+      await _repository.addToCart(productId: productId, quantity: quantity);
+      await loadCart();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  Future<void> removeFromCart(String itemId) async {
+  Future<void> removeFromCart(int itemId) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final cart = await _repository.removeFromCart(itemId);
-      state = state.copyWith(isLoading: false, cart: cart);
+      await _repository.removeFromCart(itemId);
+      await loadCart();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  Future<void> updateCartItem(String itemId, int quantity) async {
+  Future<void> updateCartItem(int itemId, int quantity) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final cart = await _repository.updateCartItem(itemId, quantity);
-      state = state.copyWith(isLoading: false, cart: cart);
+      await _repository.updateCartItem(itemId, quantity);
+      await loadCart();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  Future<Order> checkout({required String address}) async {
+  Future<Map<String, dynamic>> checkout({
+    required Map<String, dynamic> address,
+  }) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final order = await _repository.checkout(address: address);
@@ -113,12 +112,12 @@ class CommerceNotifier extends StateNotifier<CommerceState> {
     }
   }
 
-  Future<Payment> verifyPayment(Map<String, dynamic> paymentData) async {
+  Future<Map<String, dynamic>> verifyPayment(Map<String, dynamic> paymentData) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final payment = await _repository.verifyPayment(paymentData);
+      final result = await _repository.verifyPayment(paymentData);
       state = state.copyWith(isLoading: false);
-      return payment;
+      return result;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;

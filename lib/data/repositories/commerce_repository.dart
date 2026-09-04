@@ -9,11 +9,22 @@ class CommerceRepository {
 
   Future<Cart> getCart() async {
     final response = await _apiClient.get<Map<String, dynamic>>('/commerce/cart');
-    return Cart.fromJson(response);
+    final items = (response['items'] as List<dynamic>? ?? [])
+        .map((e) => CartItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final total = (response['total'] as num?)?.toDouble() ?? 0;
+    return Cart(
+      id: response['id']?.toString() ?? '',
+      userId: '',
+      items: items,
+      totalAmount: total,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
   }
 
-  Future<Cart> addToCart({
-    required String productId,
+  Future<Map<String, dynamic>> addToCart({
+    required int productId,
     int quantity = 1,
   }) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
@@ -23,37 +34,46 @@ class CommerceRepository {
         'quantity': quantity,
       },
     );
-    return Cart.fromJson(response);
+    return response;
   }
 
-  Future<Cart> removeFromCart(String itemId) async {
+  Future<Map<String, dynamic>> removeFromCart(int itemId) async {
     final response = await _apiClient.delete<Map<String, dynamic>>(
       '/commerce/cart/items/$itemId',
     );
-    return Cart.fromJson(response);
+    return response;
   }
 
-  Future<Cart> updateCartItem(String itemId, int quantity) async {
+  Future<Map<String, dynamic>> updateCartItem(int itemId, int quantity) async {
     final response = await _apiClient.put<Map<String, dynamic>>(
       '/commerce/cart/items/$itemId',
-      data: {'quantity': quantity},
+      data: {
+        'product_id': 0,
+        'quantity': quantity,
+      },
     );
-    return Cart.fromJson(response);
+    return response;
   }
 
-  Future<Order> checkout({required String address}) async {
+  Future<Map<String, dynamic>> checkout({
+    required Map<String, dynamic> address,
+    String paymentMethod = 'razorpay',
+  }) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/commerce/checkout',
-      data: {'shipping_address': address},
+      data: {
+        'shipping_address': address,
+        'payment_method': paymentMethod,
+      },
     );
-    return Order.fromJson(response);
+    return response;
   }
 
-  Future<Payment> verifyPayment(Map<String, dynamic> paymentData) async {
+  Future<Map<String, dynamic>> verifyPayment(Map<String, dynamic> paymentData) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/commerce/payment/verify',
       data: paymentData,
     );
-    return Payment.fromJson(response);
+    return response;
   }
 }

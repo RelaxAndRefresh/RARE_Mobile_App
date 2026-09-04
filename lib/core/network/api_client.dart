@@ -185,25 +185,13 @@ class ApiClient {
   T _handleResponse<T>(Response response, T Function(Map<String, dynamic>)? fromJson) {
     final responseData = response.data;
 
-    if (responseData is Map<String, dynamic>) {
-      if (fromJson != null) {
-        final data = responseData['data'];
-        if (data is Map<String, dynamic>) {
-          return fromJson(data);
-        } else if (data == null) {
-          throw ApiException(
-            statusCode: response.statusCode,
-            message: 'No data in response',
-          );
-        }
+    if (fromJson != null) {
+      if (responseData is Map<String, dynamic>) {
         return fromJson(responseData);
       }
-
-      return responseData as T;
-    }
-
-    if (fromJson != null && responseData is List) {
-      return responseData as T;
+      if (responseData is List) {
+        return responseData as T;
+      }
     }
 
     return responseData as T;
@@ -238,7 +226,7 @@ class ApiClient {
   ApiException _handleBadResponse(Response response) {
     final statusCode = response.statusCode;
     final data = response.data as Map<String, dynamic>?;
-    final message = data?['message'] as String? ?? 'An error occurred';
+    final message = data?['detail'] as String? ?? data?['message'] as String? ?? 'An error occurred';
     final errors = data?['errors'];
 
     switch (statusCode) {
@@ -256,6 +244,13 @@ class ApiClient {
         return NotFoundException(message: message);
       case 422:
         return ValidationException(message: message, fieldErrors: errors is Map ? errors.cast<String, dynamic>() : null);
+      case 429:
+        final retryAfter = response.headers.value('retry-after');
+        return RateLimitException(
+          statusCode: statusCode,
+          message: 'Too many requests. Please try again later.',
+          retryAfter: retryAfter != null ? int.tryParse(retryAfter) : null,
+        );
       case 500:
       case 502:
       case 503:

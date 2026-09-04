@@ -7,7 +7,7 @@ import 'auth_provider.dart';
 class ProfileState {
   final bool isLoading;
   final User? user;
-  final UserProfile? profile;
+  final Map<String, dynamic>? profile;
   final String? error;
 
   ProfileState({
@@ -20,7 +20,7 @@ class ProfileState {
   ProfileState copyWith({
     bool? isLoading,
     User? user,
-    UserProfile? profile,
+    Map<String, dynamic>? profile,
     String? error,
   }) {
     return ProfileState(
@@ -71,8 +71,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   Future<void> updateProfile(Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final user = await _repository.updateProfile(data);
-      state = state.copyWith(isLoading: false, user: user);
+      await _repository.updateProfile(data);
+      await loadProfile();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -81,8 +81,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   Future<void> updateAccountDetails(Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final profile = await _repository.updateAccountDetails(data);
-      state = state.copyWith(isLoading: false, profile: profile);
+      await _repository.updateAccountDetails(data);
+      await loadProfileDetails();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -91,14 +91,12 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   Future<void> loadAll() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final results = await Future.wait([
-        _repository.getProfile(),
-        _repository.getProfileDetails(),
-      ]);
+      final user = await _repository.getProfile();
+      final profile = await _repository.getProfileDetails();
       state = state.copyWith(
         isLoading: false,
-        user: results[0] as User,
-        profile: results[1] as UserProfile,
+        user: user,
+        profile: profile,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

@@ -12,24 +12,24 @@ class ProfileRepository {
     return User.fromJson(response);
   }
 
-  Future<User> updateProfile(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
     final response = await _apiClient.put<Map<String, dynamic>>(
       '/profile',
       data: data,
     );
-    return User.fromJson(response);
+    return response;
   }
 
-  Future<UserProfile> updateAccountDetails(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateAccountDetails(Map<String, dynamic> data) async {
     final response = await _apiClient.put<Map<String, dynamic>>(
       '/profile/details',
       data: data,
     );
-    return UserProfile.fromJson(response);
+    return response;
   }
 
-  Future<UserProfile> getProfileDetails() async {
+  Future<Map<String, dynamic>> getProfileDetails() async {
     final response = await _apiClient.get<Map<String, dynamic>>('/profile/details');
-    return UserProfile.fromJson(response);
+    return response;
   }
 }

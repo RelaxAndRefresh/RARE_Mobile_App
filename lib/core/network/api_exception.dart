@@ -64,3 +64,13 @@ class ForbiddenException extends ApiException {
           message: message ?? 'You do not have permission to perform this action.',
         );
 }
+
+class RateLimitException extends ApiException {
+  final int? retryAfter;
+
+  RateLimitException({int? statusCode, String? message, this.retryAfter})
+      : super(
+          statusCode: statusCode ?? 429,
+          message: message ?? 'Too many requests. Please try again later.',
+        );
+}

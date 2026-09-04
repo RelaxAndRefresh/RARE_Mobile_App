@@ -1,25 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/models/api_models.dart';
 import '../../data/repositories/privacy_repository.dart';
 import 'auth_provider.dart';
 
 class PrivacyState {
   final bool isLoading;
-  final PrivacyConsent? consents;
+  final List<Map<String, dynamic>> consents;
   final String? error;
   final String? successMessage;
 
   PrivacyState({
     this.isLoading = false,
-    this.consents,
+    this.consents = const [],
     this.error,
     this.successMessage,
   });
 
   PrivacyState copyWith({
     bool? isLoading,
-    PrivacyConsent? consents,
+    List<Map<String, dynamic>>? consents,
     String? error,
     String? successMessage,
   }) {
@@ -29,6 +28,15 @@ class PrivacyState {
       error: error,
       successMessage: successMessage,
     );
+  }
+
+  bool getConsent(String category) {
+    for (final c in consents) {
+      if (c['category'] == category) {
+        return c['consented'] == true;
+      }
+    }
+    return false;
   }
 }
 
@@ -64,11 +72,18 @@ class PrivacyNotifier extends StateNotifier<PrivacyState> {
   }) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final consents = await _repository.updateConsent(
+      await _repository.updateConsent(
         category: category,
         consented: consented,
       );
-      state = state.copyWith(isLoading: false, consents: consents);
+      final updatedConsents = List<Map<String, dynamic>>.from(state.consents);
+      final idx = updatedConsents.indexWhere((c) => c['category'] == category);
+      if (idx >= 0) {
+        updatedConsents[idx] = {'category': category, 'consented': consented};
+      } else {
+        updatedConsents.add({'category': category, 'consented': consented});
+      }
+      state = state.copyWith(isLoading: false, consents: updatedConsents);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

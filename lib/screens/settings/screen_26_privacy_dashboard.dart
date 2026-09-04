@@ -48,12 +48,12 @@ class _PrivacyDashboardScreenState
     final successMessage = privacyState.successMessage;
 
     final toggles = {
-      'Phone activity': consents?.dataCollection ?? true,
+      'Phone activity': privacyState.getConsent('data_collection'),
       'Pin code': true,
-      'Cycle tracking': consents?.analyticsConsent ?? false,
-      'Skin photos': consents?.marketingConsent ?? true,
-      'Purchase history': consents?.thirdPartySharing ?? true,
-      'Wearable data': false,
+      'Cycle tracking': privacyState.getConsent('analytics_consent'),
+      'Skin photos': privacyState.getConsent('marketing_consent'),
+      'Purchase history': privacyState.getConsent('third_party_sharing'),
+      'Wearable data': privacyState.getConsent('wearable_data'),
     };
 
     WidgetsBinding.instance.addPostFrameCallback((_) {

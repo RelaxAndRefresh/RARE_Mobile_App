@@ -20,14 +20,12 @@ class AuthRepository {
 
   Future<AuthResponse> signup({
     required String email,
-    required String name,
     required String password,
   }) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/auth/signup',
       data: {
         'email': email,
-        'name': name,
         'password': password,
       },
     );
@@ -62,14 +60,20 @@ class AuthRepository {
       data: {'refresh_token': refreshToken},
     );
 
-    final tokens = AuthTokens.fromJson(response);
-    await _storeTokens(tokens);
-    return tokens;
+    final authResponse = AuthResponse.fromJson(response);
+    await _storeTokens(authResponse.tokens);
+    return authResponse.tokens;
   }
 
   Future<void> logout() async {
     try {
-      await _apiClient.post('/auth/logout');
+      final refreshToken = await _secureStorage.read(key: 'refresh_token');
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _apiClient.post(
+          '/auth/logout',
+          data: {'refresh_token': refreshToken},
+        );
+      }
     } catch (e) {
       // Continue with local logout even if server call fails
     } finally {

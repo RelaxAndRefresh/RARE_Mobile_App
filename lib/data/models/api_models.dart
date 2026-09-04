@@ -5,16 +5,28 @@ class User {
   final String? phone;
   final String? avatarUrl;
   final bool isOnboarded;
+  final String? role;
+  final double? walletBalance;
+  final List<dynamic>? walletActivity;
+  final int? loyaltyPoints;
+  final int? trustScore;
+  final bool isAnonymous;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   User({
     required this.id,
     required this.email,
-    required this.name,
+    this.name = '',
     this.phone,
     this.avatarUrl,
     this.isOnboarded = false,
+    this.role,
+    this.walletBalance,
+    this.walletActivity,
+    this.loyaltyPoints,
+    this.trustScore,
+    this.isAnonymous = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -27,6 +39,12 @@ class User {
       phone: json['phone']?.toString(),
       avatarUrl: json['avatar_url']?.toString(),
       isOnboarded: json['is_onboarded'] ?? false,
+      role: json['role']?.toString(),
+      walletBalance: (json['wallet_balance'] as num?)?.toDouble(),
+      walletActivity: json['wallet_activity'] as List<dynamic>?,
+      loyaltyPoints: json['loyalty_points'] as int?,
+      trustScore: json['trust_score'] as int?,
+      isAnonymous: json['is_anonymous'] ?? false,
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ?? DateTime.now(),
     );
@@ -40,6 +58,12 @@ class User {
       'phone': phone,
       'avatar_url': avatarUrl,
       'is_onboarded': isOnboarded,
+      'role': role,
+      'wallet_balance': walletBalance,
+      'wallet_activity': walletActivity,
+      'loyalty_points': loyaltyPoints,
+      'trust_score': trustScore,
+      'is_anonymous': isAnonymous,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -52,6 +76,12 @@ class User {
     String? phone,
     String? avatarUrl,
     bool? isOnboarded,
+    String? role,
+    double? walletBalance,
+    List<dynamic>? walletActivity,
+    int? loyaltyPoints,
+    int? trustScore,
+    bool? isAnonymous,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -62,6 +92,12 @@ class User {
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isOnboarded: isOnboarded ?? this.isOnboarded,
+      role: role ?? this.role,
+      walletBalance: walletBalance ?? this.walletBalance,
+      walletActivity: walletActivity ?? this.walletActivity,
+      loyaltyPoints: loyaltyPoints ?? this.loyaltyPoints,
+      trustScore: trustScore ?? this.trustScore,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -139,7 +175,7 @@ class AuthTokens {
   AuthTokens({
     required this.accessToken,
     required this.refreshToken,
-    required this.expiresIn,
+    this.expiresIn = 1800,
     this.tokenType = 'bearer',
   });
 
@@ -147,7 +183,7 @@ class AuthTokens {
     return AuthTokens(
       accessToken: json['access_token']?.toString() ?? '',
       refreshToken: json['refresh_token']?.toString() ?? '',
-      expiresIn: json['expires_in'] ?? 3600,
+      expiresIn: json['expires_in'] ?? 1800,
       tokenType: json['token_type']?.toString() ?? 'bearer',
     );
   }
@@ -169,16 +205,17 @@ class AuthResponse {
   AuthResponse({required this.user, required this.tokens});
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
+    final userJson = json['user'] as Map<String, dynamic>? ?? {};
     return AuthResponse(
-      user: User.fromJson(json['user'] as Map<String, dynamic>),
-      tokens: AuthTokens.fromJson(json['tokens'] as Map<String, dynamic>),
+      user: User.fromJson(userJson),
+      tokens: AuthTokens.fromJson(json),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'user': user.toJson(),
-      'tokens': tokens.toJson(),
+      ...tokens.toJson(),
     };
   }
 }

@@ -33,12 +33,23 @@ class OnboardingRepository {
     return SoftScan.fromJson(response);
   }
 
-  Future<PrivacyConsent> savePrivacyConsent(Map<String, dynamic> consents) async {
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      '/onboarding/privacy-consent',
-      data: consents,
-    );
-    return PrivacyConsent.fromJson(response);
+  Future<void> savePrivacyConsent(Map<String, dynamic> consents) async {
+    final consentMap = {
+      'analytics_consent': consents['analytics_consent'] ?? false,
+      'marketing_consent': consents['marketing_consent'] ?? false,
+      'third_party_sharing': consents['third_party_sharing'] ?? false,
+      'data_collection': consents['data_collection'] ?? false,
+    };
+
+    for (final entry in consentMap.entries) {
+      await _apiClient.post<Map<String, dynamic>>(
+        '/onboarding/privacy-consent',
+        data: {
+          'category': entry.key,
+          'consented': entry.value,
+        },
+      );
+    }
   }
 
   Future<Map<String, dynamic>> saveCycleBaseline(Map<String, dynamic> baseline) async {

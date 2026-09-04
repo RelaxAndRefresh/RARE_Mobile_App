@@ -58,10 +58,10 @@ class _OrderBookingHistoryScreenState
     });
 
     final upcomingBookings = bookingState.bookings
-        .where((b) => b.status == 'confirmed' || b.status == 'pending')
+        .where((b) => b['status'] == 'confirmed' || b['status'] == 'pending')
         .toList();
     final pastBookings = bookingState.bookings
-        .where((b) => b.status == 'completed' || b.status == 'cancelled')
+        .where((b) => b['status'] == 'completed' || b['status'] == 'cancelled')
         .toList();
     final pastOrders = commerceState.recentOrders;
 
@@ -126,9 +126,8 @@ class _OrderBookingHistoryScreenState
                       ListTileWidget(
                         leading: const Icon(Icons.calendar_today,
                             size: 16, color: AppColors.grey),
-                        title: booking.service?.name ?? 'Booking',
-                        subtitle:
-                            '${booking.scheduledAt.day} ${_monthName(booking.scheduledAt.month)} ${booking.scheduledAt.year}',
+                        title: booking['service_name']?.toString() ?? 'Booking',
+                        subtitle: _formatDate(booking['scheduled_at']?.toString()),
                         trailing:
                             const Icon(Icons.chevron_right, color: AppColors.rose),
                       ),
@@ -136,11 +135,8 @@ class _OrderBookingHistoryScreenState
                       ListTileWidget(
                         leading: const Icon(Icons.shopping_bag,
                             size: 16, color: AppColors.grey),
-                        title: order.items.isNotEmpty
-                            ? order.items.first.product?.name ?? 'Order'
-                            : 'Order',
-                        subtitle:
-                            '${order.createdAt.day} ${_monthName(order.createdAt.month)} ${order.createdAt.year}',
+                        title: order['order_number']?.toString() ?? 'Order',
+                        subtitle: _formatDate(order['created_at']?.toString()),
                         trailing:
                             const Icon(Icons.chevron_right, color: AppColors.rose),
                       ),
@@ -157,7 +153,11 @@ class _OrderBookingHistoryScreenState
     );
   }
 
-  Widget _buildUpcomingBooking(BuildContext context, dynamic booking) {
+  Widget _buildUpcomingBooking(BuildContext context, Map<String, dynamic> booking) {
+    final scheduledAt = booking['scheduled_at'] != null
+        ? DateTime.tryParse(booking['scheduled_at'].toString())
+        : null;
+
     return RareCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +167,9 @@ class _OrderBookingHistoryScreenState
               const Icon(Icons.calendar_today, size: 16, color: AppColors.rose),
               const SizedBox(width: 8),
               Text(
-                '${_dayName(booking.scheduledAt.weekday)}, ${booking.scheduledAt.hour}:${booking.scheduledAt.minute.toString().padLeft(2, '0')} ${booking.scheduledAt.hour >= 12 ? 'PM' : 'AM'}',
+                scheduledAt != null
+                    ? '${_dayName(scheduledAt.weekday)}, ${scheduledAt.hour}:${scheduledAt.minute.toString().padLeft(2, '0')} ${scheduledAt.hour >= 12 ? 'PM' : 'AM'}'
+                    : 'TBD',
                 style: const TextStyle(
                   fontSize: 11,
                   color: AppColors.grey,
@@ -177,9 +179,7 @@ class _OrderBookingHistoryScreenState
           ),
           const SizedBox(height: 8),
           Text(
-            booking.service != null
-                ? '${booking.service!.name} — ${booking.service!.durationMinutes} min'
-                : 'Booking',
+            booking['service_name']?.toString() ?? 'Booking',
             style: TextStyles.headlineMedium,
           ),
           const SizedBox(height: 4),
@@ -224,10 +224,15 @@ class _OrderBookingHistoryScreenState
     );
   }
 
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '';
+    final dt = DateTime.tryParse(dateStr);
+    if (dt == null) return dateStr;
+    return '${dt.day} ${_monthName(dt.month)} ${dt.year}';
+  }
+
   String _dayName(int weekday) {
-    const days = [
-      'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
-    ];
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return days[weekday - 1];
   }
 

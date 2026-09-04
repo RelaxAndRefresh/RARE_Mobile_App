@@ -7,12 +7,13 @@ class PrivacyRepository {
   PrivacyRepository({ApiClient? apiClient})
       : _apiClient = apiClient ?? ApiClient();
 
-  Future<PrivacyConsent> getConsents() async {
+  Future<List<Map<String, dynamic>>> getConsents() async {
     final response = await _apiClient.get<Map<String, dynamic>>('/privacy/consents');
-    return PrivacyConsent.fromJson(response);
+    final consents = response['consents'] as List<dynamic>? ?? [];
+    return consents.cast<Map<String, dynamic>>();
   }
 
-  Future<PrivacyConsent> updateConsent({
+  Future<Map<String, dynamic>> updateConsent({
     required String category,
     required bool consented,
   }) async {
@@ -23,19 +24,24 @@ class PrivacyRepository {
         'consented': consented,
       },
     );
-    return PrivacyConsent.fromJson(response);
+    return response;
   }
 
   Future<Map<String, dynamic>> requestDataExport() async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/privacy/export',
+      data: {'export_type': 'full'},
     );
     return response;
   }
 
-  Future<Map<String, dynamic>> requestAccountDeletion() async {
+  Future<Map<String, dynamic>> requestAccountDeletion({String? reason}) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/privacy/delete-account',
+      data: {
+        'confirmation': 'DELETE_MY_ACCOUNT',
+        if (reason != null) 'reason': reason,
+      },
     );
     return response;
   }

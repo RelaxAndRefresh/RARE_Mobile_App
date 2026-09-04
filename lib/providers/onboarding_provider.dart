@@ -8,14 +8,12 @@ class OnboardingState {
   final bool isLoading;
   final OnboardingProgress? progress;
   final SoftScan? softScan;
-  final PrivacyConsent? privacyConsent;
   final String? error;
 
   OnboardingState({
     this.isLoading = false,
     this.progress,
     this.softScan,
-    this.privacyConsent,
     this.error,
   });
 
@@ -23,14 +21,12 @@ class OnboardingState {
     bool? isLoading,
     OnboardingProgress? progress,
     SoftScan? softScan,
-    PrivacyConsent? privacyConsent,
     String? error,
   }) {
     return OnboardingState(
       isLoading: isLoading ?? this.isLoading,
       progress: progress ?? this.progress,
       softScan: softScan ?? this.softScan,
-      privacyConsent: privacyConsent ?? this.privacyConsent,
       error: error,
     );
   }
@@ -85,8 +81,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   Future<void> savePrivacyConsent(Map<String, dynamic> consents) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final consent = await _repository.savePrivacyConsent(consents);
-      state = state.copyWith(isLoading: false, privacyConsent: consent);
+      await _repository.savePrivacyConsent(consents);
+      state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

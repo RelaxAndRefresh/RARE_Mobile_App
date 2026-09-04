@@ -25,7 +25,7 @@ class _PreTreatmentSyncScreenState
   Widget build(BuildContext context) {
     final consentState = ref.watch(preTreatmentConsentProvider);
     final clientState = ref.watch(clientSummaryProvider);
-    final practitionerName = clientState.client?.userName ?? 'your practitioner';
+    final practitionerName = clientState.client?['name']?.toString() ?? 'your practitioner';
 
     return Scaffold(
       backgroundColor: AppColors.cream,

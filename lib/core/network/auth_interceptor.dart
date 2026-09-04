@@ -45,7 +45,7 @@ class AuthInterceptor extends Interceptor {
         );
 
         if (response.statusCode == 200) {
-          final data = response.data['data'] ?? response.data;
+          final data = response.data;
           final newAccessToken = data['access_token'] as String?;
           final newRefreshToken = data['refresh_token'] as String?;
 

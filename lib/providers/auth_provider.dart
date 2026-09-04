@@ -100,14 +100,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> signup({
     required String email,
-    required String name,
     required String password,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
       final response = await _repository.signup(
         email: email,
-        name: name,
         password: password,
       );
       state = AuthState(

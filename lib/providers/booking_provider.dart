@@ -7,7 +7,7 @@ import 'auth_provider.dart';
 class BookingState {
   final bool isLoading;
   final List<Service> services;
-  final List<Booking> bookings;
+  final List<Map<String, dynamic>> bookings;
   final List<Map<String, dynamic>> availability;
   final String? error;
 
@@ -22,7 +22,7 @@ class BookingState {
   BookingState copyWith({
     bool? isLoading,
     List<Service>? services,
-    List<Booking>? bookings,
+    List<Map<String, dynamic>>? bookings,
     List<Map<String, dynamic>>? availability,
     String? error,
   }) {
@@ -98,9 +98,9 @@ class BookingNotifier extends StateNotifier<BookingState> {
   Future<void> cancelBooking(String id, {String? reason}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final booking = await _repository.cancelBooking(id, reason: reason);
-      final updatedBookings = state.bookings.map((b) {
-        return b.id == id ? booking : b;
+      await _repository.cancelBooking(id, reason: reason);
+      final updatedBookings = state.bookings.where((b) {
+        return b['id'].toString() != id;
       }).toList();
       state = state.copyWith(isLoading: false, bookings: updatedBookings);
     } catch (e) {

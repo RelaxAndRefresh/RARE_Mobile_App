@@ -229,9 +229,9 @@ class _PractitionerLoginScreenState
   }
 
   Widget _buildClientSummary(dynamic client) {
-    final skinSummary = client.skinSummary ?? {};
-    final activeRoutines = client.activeRoutines ?? [];
-    final latestCheckin = client.latestCheckin ?? {};
+    final skinSummary = (client is Map ? client['skin_summary'] : null) as Map<String, dynamic>? ?? {};
+    final activeRoutines = (client is Map ? client['active_routines'] : null) as List<dynamic>? ?? [];
+    final latestCheckin = (client is Map ? client['latest_checkin'] : null) as Map<String, dynamic>? ?? {};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,7 +250,7 @@ class _PractitionerLoginScreenState
               ),
               const SizedBox(height: 10),
               Text(
-                client.userName,
+                client is Map ? (client['name']?.toString() ?? client['user_name']?.toString() ?? 'Client') : 'Client',
                 style: TextStyles.displayMedium,
               ),
               const SizedBox(height: 6),

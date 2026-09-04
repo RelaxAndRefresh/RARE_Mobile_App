@@ -13,7 +13,7 @@ class PractitionerRepository {
   })  : _apiClient = apiClient ?? ApiClient(),
         _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
-  Future<AuthResponse> login({
+  Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
@@ -25,31 +25,26 @@ class PractitionerRepository {
       },
     );
 
-    final authResponse = AuthResponse.fromJson(response);
     await _secureStorage.write(
       key: 'practitioner_access_token',
-      value: authResponse.tokens.accessToken,
+      value: response['access_token']?.toString() ?? '',
     );
-    await _secureStorage.write(
-      key: 'practitioner_refresh_token',
-      value: authResponse.tokens.refreshToken,
-    );
-    return authResponse;
+    return response;
   }
 
-  Future<PractitionerClient> getClientSummary(String clientId) async {
+  Future<Map<String, dynamic>> getClientSummary(String clientId) async {
     final response = await _apiClient.get<Map<String, dynamic>>(
       '/practitioner/clients/$clientId/summary',
     );
-    return PractitionerClient.fromJson(response);
+    return response;
   }
 
-  Future<TreatmentSession> createSession(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> createSession(Map<String, dynamic> data) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/practitioner/sessions',
       data: data,
     );
-    return TreatmentSession.fromJson(response);
+    return response;
   }
 
   Future<Map<String, dynamic>> getProtocol(String sessionId) async {
@@ -59,20 +54,19 @@ class PractitionerRepository {
     return response;
   }
 
-  Future<List<PractitionerClient>> getClients({String? search}) async {
+  Future<List<Map<String, dynamic>>> getClients({String? search}) async {
     final queryParams = <String, dynamic>{};
     if (search != null) queryParams['search'] = search;
 
-    final response = await _apiClient.get<List<dynamic>>(
+    final response = await _apiClient.get<Map<String, dynamic>>(
       '/practitioner/clients',
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    return response
-        .map((e) => PractitionerClient.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final clients = response['clients'] as List<dynamic>? ?? [];
+    return clients.cast<Map<String, dynamic>>();
   }
 
-  Future<List<TreatmentSession>> getSessions({
+  Future<List<Map<String, dynamic>>> getSessions({
     String? clientId,
     int? limit,
   }) async {
@@ -80,12 +74,11 @@ class PractitionerRepository {
     if (clientId != null) queryParams['client_id'] = clientId;
     if (limit != null) queryParams['limit'] = limit;
 
-    final response = await _apiClient.get<List<dynamic>>(
+    final response = await _apiClient.get<Map<String, dynamic>>(
       '/practitioner/sessions',
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    return response
-        .map((e) => TreatmentSession.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final sessions = response['sessions'] as List<dynamic>? ?? [];
+    return sessions.cast<Map<String, dynamic>>();
   }
 }
