@@ -114,7 +114,7 @@ docker-compose up -d db redis
 Ensure PostgreSQL is running on port 5432 with a database named `rare_db`.
 
 ### 4.6 Run Migrations
-
+[Before performing this step, make sure you have rare_db database created in local postgres and update the DATABASE_URL in env example: postgresql://<username>@localhost:5432/rare_db]
 ```bash
 alembic upgrade head
 ```
