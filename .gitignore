@@ -110,6 +110,21 @@ coverage/
 # Symbols
 app.*.symbols
 
+# Backend
+backend/.env
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+backend/test.db
+backend/uploads/
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3

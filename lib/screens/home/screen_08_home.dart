@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
@@ -7,13 +8,38 @@ import '../../widgets/common/aura_widget.dart';
 import '../../widgets/common/hydration_vessel.dart';
 import '../../widgets/cards/rare_card.dart';
 import '../../core/utils/helpers.dart';
+import '../../providers/checkin_provider.dart';
+import '../../providers/notification_provider.dart';
 import 'package:go_router/go_router.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(checkinProvider.notifier).loadTodayData();
+    ref.read(notificationProvider.notifier).loadUnreadCount();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final checkinState = ref.watch(checkinProvider);
+    final notificationState = ref.watch(notificationProvider);
+
+    final bool hasCheckedIn = checkinState.todayCheckin != null;
+    final double hydrationPercent =
+        checkinState.totalHydrationMl > 0
+            ? (checkinState.totalHydrationMl / 2000).clamp(0.0, 1.0)
+            : 0.0;
+    final int tapsCount = checkinState.todayHydration.length;
+    final int totalTapsGoal = 8;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -31,12 +57,36 @@ class HomeScreen extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.circle_outlined,
-                            color: AppColors.rose),
-                        onPressed: () {
-                          context.go(RouteNames.quietInbox);
-                        },
+                      Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.circle_outlined,
+                                color: AppColors.rose),
+                            onPressed: () {
+                              context.go(RouteNames.quietInbox);
+                            },
+                          ),
+                          if (notificationState.unreadCount > 0)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.terracotta,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '${notificationState.unreadCount}',
+                                  style: const TextStyle(
+                                    fontSize: 8,
+                                    color: AppColors.cream,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       IconButton(
                         icon: const Icon(Icons.nights_stay,
@@ -63,7 +113,9 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Center(
                 child: Text(
-                  'Soft mornings\nmake honest days.',
+                  hasCheckedIn
+                      ? 'You checked in today.\nKeep the rhythm.'
+                      : 'Soft mornings\nmake honest days.',
                   style: TextStyles.quote,
                   textAlign: TextAlign.center,
                 ),
@@ -81,11 +133,36 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const HydrationVessel(fillPercentage: 0.55),
+                    HydrationVessel(
+                      fillPercentage: hydrationPercent,
+                    ),
                     const SizedBox(height: 8),
                     Text(
-                      '4 of 8 taps today — tap to fill',
+                      '$tapsCount of $totalTapsGoal taps today — tap to fill',
                       style: TextStyles.bodySmall,
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () {
+                        ref.read(checkinProvider.notifier).logHydration(250);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.rose),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          '+ Tap to log 250ml',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.rose,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

@@ -1,19 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
-import '../../core/routes/route_names.dart';
+import '../../providers/booking_provider.dart';
+import '../../providers/commerce_provider.dart';
 import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
 import '../../widgets/tiles/list_tile.dart';
 
-/// Screen 31 – Order & Booking History
-/// Separates upcoming bookings from past orders and completed Rituals.
-class OrderBookingHistoryScreen extends StatelessWidget {
+class OrderBookingHistoryScreen extends ConsumerStatefulWidget {
   const OrderBookingHistoryScreen({super.key});
 
   @override
+  ConsumerState<OrderBookingHistoryScreen> createState() =>
+      _OrderBookingHistoryScreenState();
+}
+
+class _OrderBookingHistoryScreenState
+    extends ConsumerState<OrderBookingHistoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(bookingProvider.notifier).loadBookings();
+      ref.read(commerceProvider.notifier).loadCart();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bookingState = ref.watch(bookingProvider);
+    final commerceState = ref.watch(commerceProvider);
+
+    ref.listen<BookingState>(bookingProvider, (prev, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.terracotta,
+          ),
+        );
+        ref.read(bookingProvider.notifier).clearError();
+      }
+    });
+
+    ref.listen<CommerceState>(commerceProvider, (prev, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.terracotta,
+          ),
+        );
+        ref.read(commerceProvider.notifier).clearError();
+      }
+    });
+
+    final upcomingBookings = bookingState.bookings
+        .where((b) => b.status == 'confirmed' || b.status == 'pending')
+        .toList();
+    final pastBookings = bookingState.bookings
+        .where((b) => b.status == 'completed' || b.status == 'cancelled')
+        .toList();
+    final pastOrders = commerceState.recentOrders;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -23,85 +74,101 @@ class OrderBookingHistoryScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSizes.paddingMedium),
-        child: ListView(
-          children: [
-            // Upcoming section
-            const Padding(
-              padding: EdgeInsets.only(top: 8, bottom: 4),
-              child: Text(
-                'UPCOMING',
-                style: TextStyle(
-                  fontSize: 9,
-                  letterSpacing: 3,
-                  color: AppColors.terracotta,
-                ),
+        child: bookingState.isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.mocha),
+              )
+            : ListView(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8, bottom: 4),
+                    child: Text(
+                      'UPCOMING',
+                      style: TextStyle(
+                        fontSize: 9,
+                        letterSpacing: 3,
+                        color: AppColors.terracotta,
+                      ),
+                    ),
+                  ),
+                  if (upcomingBookings.isEmpty)
+                    RareCard(
+                      child: Text(
+                        'No upcoming bookings',
+                        style: TextStyles.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  else ...[
+                    for (final booking in upcomingBookings)
+                      _buildUpcomingBooking(context, booking),
+                  ],
+                  const SizedBox(height: 16),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8, bottom: 4),
+                    child: Text(
+                      'PAST',
+                      style: TextStyle(
+                        fontSize: 9,
+                        letterSpacing: 3,
+                        color: AppColors.terracotta,
+                      ),
+                    ),
+                  ),
+                  if (pastBookings.isEmpty && pastOrders.isEmpty)
+                    const ListTileWidget(
+                      leading: Icon(Icons.calendar_today,
+                          size: 16, color: AppColors.grey),
+                      title: 'No past bookings or orders',
+                    )
+                  else ...[
+                    for (final booking in pastBookings)
+                      ListTileWidget(
+                        leading: const Icon(Icons.calendar_today,
+                            size: 16, color: AppColors.grey),
+                        title: booking.service?.name ?? 'Booking',
+                        subtitle:
+                            '${booking.scheduledAt.day} ${_monthName(booking.scheduledAt.month)} ${booking.scheduledAt.year}',
+                        trailing:
+                            const Icon(Icons.chevron_right, color: AppColors.rose),
+                      ),
+                    for (final order in pastOrders)
+                      ListTileWidget(
+                        leading: const Icon(Icons.shopping_bag,
+                            size: 16, color: AppColors.grey),
+                        title: order.items.isNotEmpty
+                            ? order.items.first.product?.name ?? 'Order'
+                            : 'Order',
+                        subtitle:
+                            '${order.createdAt.day} ${_monthName(order.createdAt.month)} ${order.createdAt.year}',
+                        trailing:
+                            const Icon(Icons.chevron_right, color: AppColors.rose),
+                      ),
+                  ],
+                  const SizedBox(height: 16),
+                  Text(
+                    'Need to reschedule? We can help with that.',
+                    style: TextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-            ),
-            // Upcoming booking with Manage Booking option
-            _buildUpcomingBooking(context),
-            const SizedBox(height: 16),
-
-            // Past section
-            const Padding(
-              padding: EdgeInsets.only(top: 8, bottom: 4),
-              child: Text(
-                'PAST',
-                style: TextStyle(
-                  fontSize: 9,
-                  letterSpacing: 3,
-                  color: AppColors.terracotta,
-                ),
-              ),
-            ),
-            const ListTileWidget(
-              leading:
-                  Icon(Icons.calendar_today, size: 16, color: AppColors.grey),
-              title: 'Barrier Repair Serum',
-              subtitle: '12 Jul 2026',
-              trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-            ),
-            const ListTileWidget(
-              leading:
-                  Icon(Icons.calendar_today, size: 16, color: AppColors.grey),
-              title: 'Guided Reflexology',
-              subtitle: '2 Jul 2026',
-              trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-            ),
-            const ListTileWidget(
-              leading:
-                  Icon(Icons.calendar_today, size: 16, color: AppColors.grey),
-              title: 'Restorative Facial',
-              subtitle: '22 Jun 2026',
-              trailing: Icon(Icons.chevron_right, color: AppColors.rose),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Help text
-            Text(
-              'Need to reschedule? We can help with that.',
-              style: TextStyles.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildUpcomingBooking(BuildContext context) {
+  Widget _buildUpcomingBooking(BuildContext context, dynamic booking) {
     return RareCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with date and time
-          const Row(
+          Row(
             children: [
-              Icon(Icons.calendar_today, size: 16, color: AppColors.rose),
-              SizedBox(width: 8),
+              const Icon(Icons.calendar_today, size: 16, color: AppColors.rose),
+              const SizedBox(width: 8),
               Text(
-                'Thu, 3:30 PM',
-                style: TextStyle(
+                '${_dayName(booking.scheduledAt.weekday)}, ${booking.scheduledAt.hour}:${booking.scheduledAt.minute.toString().padLeft(2, '0')} ${booking.scheduledAt.hour >= 12 ? 'PM' : 'AM'}',
+                style: const TextStyle(
                   fontSize: 11,
                   color: AppColors.grey,
                 ),
@@ -109,19 +176,18 @@ class OrderBookingHistoryScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // Service name
           Text(
-            'Restorative Facial — 60 min',
+            booking.service != null
+                ? '${booking.service!.name} — ${booking.service!.durationMinutes} min'
+                : 'Booking',
             style: TextStyles.headlineMedium,
           ),
           const SizedBox(height: 4),
-          // Location details (simulated)
           Text(
             'RARE Studio, Bengaluru',
             style: TextStyles.bodySmall,
           ),
           const SizedBox(height: 12),
-          // Check-in QR placeholder
           Container(
             width: double.infinity,
             height: 80,
@@ -141,12 +207,9 @@ class OrderBookingHistoryScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Manage Booking button
           GhostButton(
             label: 'Manage Booking',
             onPressed: () {
-              // Navigate to booking management webview
-              // For now, show a snackbar
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Manage booking flow would open here.'),
@@ -159,5 +222,20 @@ class OrderBookingHistoryScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _dayName(int weekday) {
+    const days = [
+      'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
+    ];
+    return days[weekday - 1];
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
   }
 }

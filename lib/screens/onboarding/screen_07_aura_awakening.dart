@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_sizes.dart';
-import '../../core/theme/text_styles.dart';
-import '../../core/routes/route_names.dart';
-import '../../widgets/buttons/primary_button.dart';
-import '../../widgets/common/aura_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class AuraAwakeningScreen extends StatelessWidget {
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_sizes.dart';
+import '../../core/routes/route_names.dart';
+import '../../core/theme/text_styles.dart';
+import '../../providers/onboarding_provider.dart';
+import '../../widgets/buttons/primary_button.dart';
+import '../../widgets/common/aura_widget.dart';
+
+class AuraAwakeningScreen extends ConsumerWidget {
   const AuraAwakeningScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final onboardingState = ref.watch(onboardingProvider);
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: Center(
@@ -36,9 +41,19 @@ class AuraAwakeningScreen extends StatelessWidget {
               const SizedBox(height: 40),
               PrimaryButton(
                 label: 'Begin Your First Check-in',
-                onPressed: () {
-                  context.go(RouteNames.amCheckin);
-                },
+                isLoading: onboardingState.isLoading,
+                onPressed: onboardingState.isLoading
+                    ? null
+                    : () async {
+                        await ref
+                            .read(onboardingProvider.notifier)
+                            .updateStep(7, data: {
+                          'onboarding_completed': true,
+                        });
+                        if (context.mounted) {
+                          context.go(RouteNames.amCheckin);
+                        }
+                      },
               ),
             ],
           ),

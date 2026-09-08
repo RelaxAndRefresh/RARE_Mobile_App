@@ -1,17 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
+import '../../providers/credits_provider.dart';
+import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
 import '../../widgets/tiles/list_tile.dart';
 
-/// Screen 32 – Credits Ledger
-/// A plain running balance and transaction history for the credits system.
-class CreditsLedgerScreen extends StatelessWidget {
+class CreditsLedgerScreen extends ConsumerStatefulWidget {
   const CreditsLedgerScreen({super.key});
 
   @override
+  ConsumerState<CreditsLedgerScreen> createState() =>
+      _CreditsLedgerScreenState();
+}
+
+class _CreditsLedgerScreenState extends ConsumerState<CreditsLedgerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(creditsProvider.notifier).loadAll();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final creditsState = ref.watch(creditsProvider);
+    final balance = creditsState.balance;
+    final transactions = creditsState.transactions;
+    final isLoading = creditsState.isLoading;
+    final error = creditsState.error;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -19,88 +41,122 @@ class CreditsLedgerScreen extends StatelessWidget {
         backgroundColor: AppColors.cream,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppSizes.paddingMedium),
-        child: ListView(
-          children: [
-            // Balance card
-            RareCard(
-              child: Column(
-                children: [
-                  const Text(
-                    'CURRENT BALANCE',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.grey,
-                      letterSpacing: 1,
-                    ),
+      body: isLoading && balance == null
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.rose),
+            )
+          : error != null && balance == null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Failed to load credits.',
+                        style: TextStyles.bodyMedium.copyWith(
+                          color: AppColors.terracotta,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GhostButton(
+                        label: 'Retry',
+                        onPressed: () =>
+                            ref.read(creditsProvider.notifier).loadAll(),
+                        width: null,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '₹340',
-                    style: TextStyles.displayMedium.copyWith(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w300,
-                    ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(AppSizes.paddingMedium),
+                  child: ListView(
+                    children: [
+                      RareCard(
+                        child: Column(
+                          children: [
+                            const Text(
+                              'CURRENT BALANCE',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.grey,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${balance?.availableCredits ?? 0}',
+                              style: TextStyles.displayMedium.copyWith(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '1 Credit = ₹1',
+                              style: TextStyles.bodySmall,
+                            ),
+                            if (balance != null &&
+                                balance.pendingCredits > 0) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                '${balance.pendingCredits} pending credits',
+                                style: TextStyles.bodySmall.copyWith(
+                                  color: AppColors.gold,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (transactions.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              'No transactions yet.',
+                              style: TextStyles.bodyMedium.copyWith(
+                                color: AppColors.grey,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ...transactions.map((tx) {
+                          final isCredit = tx.amount > 0;
+                          final prefix = isCredit ? '+' : '−';
+                          final dateStr =
+                              DateFormat('d MMM, y').format(tx.createdAt);
+                          final timeAgo = _timeAgo(tx.createdAt);
+                          return _TransactionItem(
+                            icon: isCredit ? Icons.add : Icons.remove,
+                            title:
+                                '$prefix${tx.amount.abs()}${tx.description != null ? ' · ${tx.description}' : ''}',
+                            subtitle: timeAgo,
+                            isCredit: isCredit,
+                          );
+                        }),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Credits apply automatically at checkout on the web.',
+                        style: TextStyles.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '1 Credit = ₹1',
-                    style: TextStyles.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Transaction history
-            const _TransactionItem(
-              icon: Icons.add,
-              title: '+10 · AM Check-in',
-              subtitle: 'Today',
-              isCredit: true,
-            ),
-            const _TransactionItem(
-              icon: Icons.add,
-              title: '+15 · 14-Day Resonance',
-              subtitle: '3 days ago',
-              isCredit: true,
-            ),
-            const _TransactionItem(
-              icon: Icons.add,
-              title: '+50 · Refund: Reflexology',
-              subtitle: '1 week ago',
-              isCredit: true,
-            ),
-            const _TransactionItem(
-              icon: Icons.remove,
-              title: '−120 · Ritual Spend',
-              subtitle: '2 weeks ago',
-              isCredit: false,
-            ),
-            const _TransactionItem(
-              icon: Icons.add,
-              title: '+8 · Ritual Completed',
-              subtitle: '3 weeks ago',
-              isCredit: true,
-            ),
-
-            const SizedBox(height: 16),
-
-            // Footer
-            Text(
-              'Credits apply automatically at checkout on the web.',
-              style: TextStyles.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+                ),
     );
+  }
+
+  String _timeAgo(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()} weeks ago';
+    return DateFormat('d MMM').format(dateTime);
   }
 }
 
-/// A single transaction row with icon, description, and date.
 class _TransactionItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -119,7 +175,7 @@ class _TransactionItem extends StatelessWidget {
     return ListTileWidget(
       leading: Icon(
         icon,
-        color: isCredit ? AppColors.rose : AppColors.rose,
+        color: AppColors.rose,
         size: 16,
       ),
       title: title,

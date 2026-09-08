@@ -1,20 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/routes/route_names.dart';
+import '../../providers/booking_provider.dart';
 import '../../widgets/buttons/primary_button.dart';
 import '../../widgets/buttons/ghost_button.dart';
 import '../../widgets/cards/rare_card.dart';
 
-/// Screen 23 – Booking Webview
-/// Displays an embedded webview (simulated) with booking details
-/// and a confirmation action.
-class BookingWebviewScreen extends StatelessWidget {
+class BookingWebviewScreen extends ConsumerWidget {
   const BookingWebviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookingState = ref.watch(bookingProvider);
+
+    ref.listen<BookingState>(bookingProvider, (prev, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.terracotta,
+          ),
+        );
+        ref.read(bookingProvider.notifier).clearError();
+      }
+    });
+
+    final selectedService = bookingState.services.isNotEmpty
+        ? bookingState.services.first
+        : null;
+    final selectedSlot = bookingState.availability.isNotEmpty
+        ? bookingState.availability.first
+        : null;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -26,7 +47,6 @@ class BookingWebviewScreen extends StatelessWidget {
         padding: const EdgeInsets.all(AppSizes.paddingMedium),
         child: Column(
           children: [
-            // Webview chrome (simulated)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -59,61 +79,102 @@ class BookingWebviewScreen extends StatelessWidget {
                 ],
               ),
             ),
-            // Booking details card
-            RareCard(
-              backgroundColor: AppColors.cream,
-              elevation: 0,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'THURSDAY · 3:30 PM',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Restorative Facial — 60 min',
-                    style: TextStyles.headlineMedium,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Same anonymous-user and offline pre‑flight checks '
-                    'as Screen 21 apply here.',
-                    style: TextStyles.bodySmall,
-                  ),
-                  const SizedBox(height: 16),
-                  PrimaryButton(
-                    label: 'Confirm & Pay',
-                    onPressed: () {
-                      // Navigate to checkout success / failure
-                      // In a real app, this would trigger the payment flow.
-                      // For now, go to a success state placeholder.
-                      // Since Screen 39 is not yet implemented, we can just go back
-                      // or show a snackbar. We'll route to a temporary success page
-                      // if available, otherwise pop.
-                      // We'll just go to home for demonstration.
-                      // This will be replaced when Screen 39 is built.
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Payment flow would start here.'),
-                          backgroundColor: AppColors.mocha,
+            if (bookingState.isLoading)
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.mocha),
+                ),
+              )
+            else
+              Expanded(
+                child: RareCard(
+                  backgroundColor: AppColors.cream,
+                  elevation: 0,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        selectedSlot != null
+                            ? '${(selectedSlot['date'] ?? DateTime.now().toIso8601String()).toString().substring(0, 10).toUpperCase()} · ${selectedSlot['time'] ?? '3:30 PM'}'
+                            : 'THURSDAY · 3:30 PM',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.grey,
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        selectedService != null
+                            ? '${selectedService.name} — ${selectedService.durationMinutes} min'
+                            : 'Restorative Facial — 60 min',
+                        style: TextStyles.headlineMedium,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        selectedService?.description ??
+                            'Same anonymous-user and offline pre‑flight checks '
+                                'as Screen 21 apply here.',
+                        style: TextStyles.bodySmall,
+                      ),
+                      const SizedBox(height: 16),
+                      PrimaryButton(
+                        label: bookingState.isLoading
+                            ? 'Confirming...'
+                            : 'Confirm & Pay',
+                        onPressed: bookingState.isLoading
+                            ? null
+                            : () async {
+                                final serviceId =
+                                    selectedService?.id ?? '';
+                                final practitionerId = selectedSlot != null
+                                    ? (selectedSlot['practitioner_id'] ??
+                                            '')
+                                        .toString()
+                                    : '';
+                                final scheduledAt = selectedSlot != null
+                                    ? (selectedSlot['date'] ?? '')
+                                        .toString()
+                                    : DateTime.now()
+                                        .add(const Duration(days: 3))
+                                        .toIso8601String();
+                                final duration =
+                                    selectedService?.durationMinutes ?? 60;
+
+                                await ref
+                                    .read(bookingProvider.notifier)
+                                    .createBooking({
+                                  'service_id': serviceId,
+                                  'practitioner_id': practitionerId,
+                                  'scheduled_at': scheduledAt,
+                                  'duration_minutes': duration,
+                                });
+
+                                if (context.mounted) {
+                                  final updatedState =
+                                      ref.read(bookingProvider);
+                                  if (updatedState.error == null) {
+                                    context.go(
+                                      '${RouteNames.checkoutState}?isSuccess=true',
+                                    );
+                                  } else {
+                                    context.go(
+                                      '${RouteNames.checkoutState}?isSuccess=false',
+                                    );
+                                  }
+                                }
+                              },
+                      ),
+                      const SizedBox(height: 8),
+                      GhostButton(
+                        label: 'Cancel',
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  GhostButton(
-                    label: 'Cancel',
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
+                ),
               ),
-            ),
           ],
         ),
       ),

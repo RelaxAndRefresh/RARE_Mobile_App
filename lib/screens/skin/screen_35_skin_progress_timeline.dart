@@ -1,62 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/text_styles.dart';
+import '../../providers/skin_provider.dart';
+import '../../data/models/api_models.dart';
+import 'package:intl/intl.dart';
 
-/// Screen 35 – Skin Progress Timeline
-/// A horizontal scroll of logged Skin Log photos, overlaid with
-/// tags selected that day. Users can delete blurry or unwanted photos.
-class SkinProgressTimelineScreen extends StatefulWidget {
+class SkinProgressTimelineScreen extends ConsumerStatefulWidget {
   const SkinProgressTimelineScreen({super.key});
 
   @override
-  State<SkinProgressTimelineScreen> createState() =>
+  ConsumerState<SkinProgressTimelineScreen> createState() =>
       _SkinProgressTimelineScreenState();
 }
 
 class _SkinProgressTimelineScreenState
-    extends State<SkinProgressTimelineScreen> {
-  // Simulated photo entries with tags
-  final List<_SkinPhotoEntry> _photos = [
-    _SkinPhotoEntry(
-      tags: ['Tight', 'Dry'],
-      date: 'Jul 22',
-      color: AppColors.rose,
-    ),
-    _SkinPhotoEntry(
-      tags: ['Calm'],
-      date: 'Jul 20',
-      color: AppColors.linen,
-    ),
-    _SkinPhotoEntry(
-      tags: ['Reactive', 'Sensitive'],
-      date: 'Jul 18',
-      color: AppColors.terracotta,
-    ),
-    _SkinPhotoEntry(
-      tags: ['Bright', 'Calm'],
-      date: 'Jul 15',
-      color: AppColors.gold,
-    ),
-    _SkinPhotoEntry(
-      tags: ['Calm'],
-      date: 'Jul 12',
-      color: AppColors.linen,
-    ),
-    _SkinPhotoEntry(
-      tags: ['Tight', 'Reactive'],
-      date: 'Jul 10',
-      color: AppColors.rose,
-    ),
-    _SkinPhotoEntry(
-      tags: ['Dull'],
-      date: 'Jul 8',
-      color: AppColors.grey,
-    ),
-  ];
+    extends ConsumerState<SkinProgressTimelineScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(skinProvider.notifier).loadTimeline();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final skinState = ref.watch(skinProvider);
+    final timeline = skinState.timeline;
+    final isLoading = skinState.isLoading;
+    final error = skinState.error;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -79,18 +52,66 @@ class _SkinProgressTimelineScreenState
               style: TextStyles.bodySmall,
             ),
             const SizedBox(height: 16),
-            // Horizontal scroll of photos
             Expanded(
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _photos.length,
-                itemBuilder: (context, index) {
-                  return _buildPhotoCard(_photos[index], index);
-                },
-              ),
+              child: isLoading && timeline.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.rose),
+                    )
+                  : error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.cloud_off,
+                                  size: 48, color: AppColors.grey),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Something feels off. Let\'s try again in a moment.',
+                                style: TextStyles.bodyMedium,
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              GestureDetector(
+                                onTap: () => ref
+                                    .read(skinProvider.notifier)
+                                    .loadTimeline(),
+                                child: const Text(
+                                  'Retry',
+                                  style: TextStyle(
+                                    color: AppColors.rose,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : timeline.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.photo_library_outlined,
+                                      size: 48, color: AppColors.grey),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'We are listening. Keep checking in.',
+                                    style: TextStyles.bodyMedium,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: timeline.length,
+                              itemBuilder: (context, index) {
+                                final entry = timeline[index];
+                                return _buildPhotoCard(entry, index);
+                              },
+                            ),
             ),
             const SizedBox(height: 16),
-            // Footer note
             Text(
               'Long-press or tap the trash icon to delete a blurry or badly lit photo — it\'s flagged ignored, never trained on.',
               style: TextStyles.bodySmall,
@@ -102,37 +123,51 @@ class _SkinProgressTimelineScreenState
     );
   }
 
-  Widget _buildPhotoCard(_SkinPhotoEntry entry, int index) {
+  Widget _buildPhotoCard(SkinTimelineEntry entry, int index) {
+    final log = entry.log;
+    final photo = entry.photo;
+    final tags = log?.tags ?? [];
+    final dateStr = DateFormat('MMM d').format(entry.date);
+    final hasImage = photo?.imageUrl != null && photo!.imageUrl.isNotEmpty;
+
+    Color cardColor;
+    if (tags.contains('Tight') || tags.contains('Reactive')) {
+      cardColor = AppColors.rose;
+    } else if (tags.contains('Calm') || tags.contains('Bright')) {
+      cardColor = AppColors.linen;
+    } else if (tags.contains('Sensitive')) {
+      cardColor = AppColors.terracotta;
+    } else {
+      cardColor = AppColors.gold;
+    }
+
     return GestureDetector(
-      onLongPress: () {
-        _showDeleteConfirmation(context, index);
-      },
+      onLongPress: () => _showDeleteConfirmation(context, entry),
       child: Container(
         width: 120,
         height: 160,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: entry.color.withOpacity(0.3),
+          color: cardColor.withOpacity(0.3),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
           border: Border.all(color: AppColors.divider, width: 0.5),
         ),
         child: Stack(
           children: [
-            // Photo placeholder with gradient
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    entry.color.withOpacity(0.6),
-                    entry.color.withOpacity(0.1),
-                  ],
-                ),
+            if (hasImage)
+              ClipRRect(
                 borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-              ),
-            ),
-            // Tags overlay at bottom
+                child: Image.network(
+                  photo!.imageUrl,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildGradientPlaceholder(cardColor),
+                ),
+              )
+            else
+              _buildGradientPlaceholder(cardColor),
             Positioned(
               bottom: 8,
               left: 8,
@@ -143,7 +178,7 @@ class _SkinProgressTimelineScreenState
                   Wrap(
                     spacing: 4,
                     runSpacing: 4,
-                    children: entry.tags.map((tag) {
+                    children: tags.map((tag) {
                       return Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -165,7 +200,7 @@ class _SkinProgressTimelineScreenState
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    entry.date,
+                    dateStr,
                     style: const TextStyle(
                       fontSize: 9,
                       color: AppColors.cream,
@@ -175,14 +210,11 @@ class _SkinProgressTimelineScreenState
                 ],
               ),
             ),
-            // Delete icon (top-right)
             Positioned(
               top: 6,
               right: 6,
               child: GestureDetector(
-                onTap: () {
-                  _showDeleteConfirmation(context, index);
-                },
+                onTap: () => _showDeleteConfirmation(context, entry),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -203,7 +235,26 @@ class _SkinProgressTimelineScreenState
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, int index) {
+  Widget _buildGradientPlaceholder(Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withOpacity(0.6),
+            color.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, SkinTimelineEntry entry) {
+    final logId = entry.log?.id;
+    if (logId == null) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -232,11 +283,10 @@ class _SkinProgressTimelineScreenState
             ),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _photos.removeAt(index);
-              });
+            onPressed: () async {
               Navigator.pop(context);
+              await ref.read(skinProvider.notifier).deleteLog(logId);
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Photo deleted and flagged ignored.'),
@@ -254,17 +304,4 @@ class _SkinProgressTimelineScreenState
       ),
     );
   }
-}
-
-/// Data class for a skin photo entry.
-class _SkinPhotoEntry {
-  final List<String> tags;
-  final String date;
-  final Color color;
-
-  _SkinPhotoEntry({
-    required this.tags,
-    required this.date,
-    required this.color,
-  });
 }

@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'route_names.dart';
+import '../../providers/auth_provider.dart';
 import '../../screens/splash/screen_37_splash_returning.dart';
 import '../../screens/onboarding/screen_01_welcome.dart';
 import '../../screens/onboarding/screen_02_soft_scan.dart';
@@ -47,9 +49,38 @@ import '../../screens/b2b/screen_43_pre_treatment_sync.dart';
 import '../../screens/b2b/screen_44_post_treatment_protocol.dart';
 import '../../screens/error/screen_30_error_empty.dart';
 
+const _publicRoutes = <String>{
+  '/',
+  '/auth/splash',
+  '/onboarding/welcome',
+  '/onboarding/soft-scan',
+  '/onboarding/account-sync',
+  '/onboarding/privacy-gate',
+  '/onboarding/cycle-baseline',
+  '/onboarding/wearable-connection',
+  '/onboarding/aura-awakening',
+  '/error-empty',
+  '/legal/documents',
+  '/b2b/practitioner-login',
+};
+
 final goRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authProvider);
+
   return GoRouter(
     initialLocation: RouteNames.splashReturning,
+    redirect: (context, state) {
+      final isLoggedIn = authState.status == AuthStatus.authenticated;
+      final isPublicRoute = _publicRoutes.contains(state.matchedLocation);
+
+      if (!isLoggedIn && !isPublicRoute) {
+        return RouteNames.splashReturning;
+      }
+      if (isLoggedIn && state.matchedLocation == RouteNames.splashReturning) {
+        return RouteNames.home;
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: RouteNames.splashReturning,
@@ -174,7 +205,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.depletionConfirmation,
         name: 'depletionConfirmation',
-        builder: (context, state) => const DepletionConfirmationScreen(),
+        builder: (context, state) {
+          final itemId = state.uri.queryParameters['itemId'];
+          return DepletionConfirmationScreen(itemId: itemId);
+        },
       ),
       GoRoute(
         path: RouteNames.settings,
