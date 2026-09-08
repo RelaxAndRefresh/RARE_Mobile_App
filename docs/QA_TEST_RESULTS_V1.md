@@ -4,7 +4,7 @@
 **QA Version:** V1  
 **QA Type:** Manual + Backend API + Automated Testing  
 **Test Environment:** Development  
-**Branch Tested:** `Razeen_Backend`  
+**Branch Tested:** `sara_qa`  
 **Tester:** Sara  
 **Test Date:** 7th September 2026  
 **Status:** 🟡 In Progress
@@ -241,16 +241,16 @@ Swagger UI:
 
 | Test ID | Method | Endpoint | Description | Expected Result | Actual Result | Status | Bug ID |
 |---|---|---|---|---|---|---|---|
-| API-001 | POST | `/api/auth/register` | User registration | User is registered successfully | TBD | ⬜ Not Tested | - |
-| API-002 | POST | `/api/auth/login` | User login | Login succeeds and JWT is returned | TBD | ⬜ Not Tested | - |
-| API-003 | GET | `/api/users/me` | Current user profile | Current authenticated user is returned | TBD | ⬜ Not Tested | - |
-| API-004 | GET | `/api/products` | Product listing | Available products are returned | TBD | ⬜ Not Tested | - |
-| API-005 | POST | `/api/checkins` | Create check-in | Check-in is created successfully | TBD | ⬜ Not Tested | - |
-| API-006 | GET | `/api/shelf` | Get shelf items | User shelf items are returned | TBD | ⬜ Not Tested | - |
-| API-007 | GET | `/api/insights` | Get insights | User insights are returned | TBD | ⬜ Not Tested | - |
-| API-008 | GET | `/api/credits` | Get credit balance | Current credit balance is returned | TBD | ⬜ Not Tested | - |
-| API-009 | GET | `/api/notifications` | Get notifications | User notifications are returned | TBD | ⬜ Not Tested | - |
-| API-010 | POST | `/api/skin-logs` | Create skin log | Skin log is created successfully | TBD | ⬜ Not Tested | - |
+| API-001 | POST | `/api/auth/register` | User registration | User is registered successfully | Error |  Tested | - |
+| API-002 | POST | `/api/auth/login` | User login | Login succeeds and JWT is returned | Error | Tested | - |
+| API-003 | GET | `/api/users/me` | Current user profile | Current authenticated user is returned | Error | Tested | - |
+| API-004 | GET | `/api/products` | Product listing | Available products are returned | Error |  Tested | - |
+| API-005 | POST | `/api/checkins` | Create check-in | Check-in is created successfully | Error | Tested | - |
+| API-006 | GET | `/api/shelf` | Get shelf items | User shelf items are returned | Error | Tested | - |
+| API-007 | GET | `/api/insights` | Get insights | User insights are returned | Error | Tested | - |
+| API-008 | GET | `/api/credits` | Get credit balance | Current credit balance is returned | Error | Tested | - |
+| API-009 | GET | `/api/notifications` | Get notifications | User notifications are returned | TBD | Tested | - |
+| API-010 | POST | `/api/skin-logs` | Create skin log | Skin log is created successfully | Error | Tested | - |
 
 ---
 
