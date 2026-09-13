@@ -68,6 +68,10 @@ class PrivacyCategory(str, enum.Enum):
     skin_photos = "skin_photos"
     purchase_history = "purchase_history"
     wearable_data = "wearable_data"
+    analytics_consent = "analytics_consent"
+    marketing_consent = "marketing_consent"
+    third_party_sharing = "third_party_sharing"
+    data_collection = "data_collection"
 
 
 class OrderStatus(str, enum.Enum):

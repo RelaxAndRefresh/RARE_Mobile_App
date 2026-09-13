@@ -6,14 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import decode_token
-from app.db.database import get_db
+from app.db.database import SessionLocal
 from app.db.models import User
 
 security = HTTPBearer()
 
 
 async def get_db_session():
-    db = get_db()
+    db = SessionLocal()
     try:
         yield db
     finally:
