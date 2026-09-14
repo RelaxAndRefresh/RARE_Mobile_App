@@ -20,19 +20,6 @@ class AccountSyncScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final onboardingState = ref.watch(onboardingProvider);
 
-    ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.status == AuthStatus.authenticated) {
-        ref.read(onboardingProvider.notifier).updateStep(3, data: {
-          'synced': true,
-        });
-        context.go(RouteNames.privacyGate);
-      } else if (next.status == AuthStatus.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error ?? 'Authentication failed')),
-        );
-      }
-    });
-
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(title: const Text('Account Sync')),
@@ -86,6 +73,14 @@ class AccountSyncScreen extends ConsumerWidget {
                             await ref
                                 .read(authProvider.notifier)
                                 .login(email: '', password: '');
+                            if (context.mounted &&
+                                ref.read(authProvider).status ==
+                                    AuthStatus.authenticated) {
+                              ref.read(onboardingProvider.notifier).updateStep(3, data: {
+                                'synced': true,
+                              });
+                              context.go(RouteNames.privacyGate);
+                            }
                           },
                         ),
                       ],
@@ -96,19 +91,19 @@ class AccountSyncScreen extends ConsumerWidget {
                     label: 'Skip for now — start anonymously',
                     onPressed: () async {
                       await ref
-                          .read(onboardingProvider.notifier)
-                          .updateStep(3, data: {
-                        'synced': false,
-                        'anonymous': true,
-                      });
+                          .read(authProvider.notifier)
+                          .anonymousSignup();
                       if (context.mounted) {
+                        ref.read(onboardingProvider.notifier).updateStep(3, data: {
+                          'synced': true,
+                        });
                         context.go(RouteNames.privacyGate);
                       }
                     },
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Skipping creates a local, anonymous profile. Your Shelf stays empty and Auto‑Swap stays dormant until you connect later from Profile Hub.',
+                    'Skipping creates a local, anonymous profile. Your Shelf stays empty and Auto\u2011Swap stays dormant until you connect later from Profile Hub.',
                     style: TextStyles.bodySmall,
                     textAlign: TextAlign.center,
                   ),

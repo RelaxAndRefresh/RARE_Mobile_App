@@ -36,6 +36,17 @@ class AuthRepository {
     return authResponse;
   }
 
+  Future<AuthResponse> anonymousSignup() async {
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      '/auth/anonymous',
+    );
+
+    final authResponse = AuthResponse.fromJson(response);
+    await _storeTokens(authResponse.tokens);
+    await _storeUser(authResponse.user);
+    return authResponse;
+  }
+
   Future<AuthResponse> login({
     required String email,
     required String password,

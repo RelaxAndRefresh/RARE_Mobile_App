@@ -64,12 +64,24 @@ const _publicRoutes = <String>{
   '/b2b/practitioner-login',
 };
 
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void notifyRefresh() => notifyListeners();
+}
+
+final _routerRefreshProvider = Provider<_RouterRefreshNotifier>((ref) {
+  final notifier = _RouterRefreshNotifier();
+  ref.listen(authProvider, (_, __) => notifier.notifyRefresh());
+  return notifier;
+});
+
 final goRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final refreshNotifier = ref.watch(_routerRefreshProvider);
 
   return GoRouter(
     initialLocation: RouteNames.splashReturning,
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final isLoggedIn = authState.status == AuthStatus.authenticated;
       final isPublicRoute = _publicRoutes.contains(state.matchedLocation);
 

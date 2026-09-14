@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.exceptions import exception_handlers
@@ -13,11 +15,32 @@ from app.routers import (
     support, practitioner, admin,
 )
 
-CORS_ORIGINS = [
+ALLOWED_ORIGINS = [
     origin.strip()
     for origin in (settings.CORS_ORIGINS or "").split(",")
     if origin.strip()
-] or ["http://localhost:3000", "http://localhost:8080"]
+]
+
+
+class DynamicCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin", "")
+        is_wildcard = "*" in ALLOWED_ORIGINS
+        origin_allowed = is_wildcard or origin in ALLOWED_ORIGINS
+
+        if request.method == "OPTIONS":
+            response = Response(status_code=204)
+        else:
+            response = await call_next(request)
+
+        if origin and origin_allowed:
+            response.headers["Access-Control-Allow-Origin"] = origin if not is_wildcard else "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Access-Control-Max-Age"] = "600"
+
+        return response
 
 
 @asynccontextmanager
@@ -28,42 +51,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="RARE Mobile App API",
-    description="Backend API for the RARE mobile application - personalized skincare and wellness platform",
+    description="Backend API for the RARE mobile application",
     version="1.0.0",
     lifespan=lifespan,
-    openapi_tags=[
-        {"name": "Authentication", "description": "User signup, login, and token management"},
-        {"name": "Users", "description": "User profile and account management"},
-        {"name": "Onboarding", "description": "New user onboarding flow"},
-        {"name": "Check-ins", "description": "Daily AM/PM check-ins and hydration tracking"},
-        {"name": "Skin Tracking", "description": "Skin logs, photos, and timeline"},
-        {"name": "Cycle Tracking", "description": "Menstrual cycle tracking and calendar"},
-        {"name": "Wearable", "description": "Wearable device integration"},
-        {"name": "Product Shelf", "description": "Track product usage and depletion"},
-        {"name": "Routine", "description": "Skincare routine management"},
-        {"name": "Insights", "description": "Biweekly, monthly, and pulse insights"},
-        {"name": "Environmental Data", "description": "AQI, UV, and environmental data"},
-        {"name": "Inbox / Notifications", "description": "User notifications and messages"},
-        {"name": "Rituals", "description": "Curated skincare rituals"},
-        {"name": "Products", "description": "Product catalog"},
-        {"name": "Commerce", "description": "Cart, checkout, and payments"},
-        {"name": "Bookings", "description": "Practitioner booking and scheduling"},
-        {"name": "Orders", "description": "Order history and details"},
-        {"name": "Credits", "description": "Credit balance and transactions"},
-        {"name": "Privacy", "description": "Privacy consents and data management"},
-        {"name": "Support", "description": "Support tickets and messaging"},
-        {"name": "Practitioner", "description": "Practitioner portal and client management"},
-        {"name": "Admin", "description": "Admin dashboard and management"},
-    ],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(DynamicCORSMiddleware)
 
 for exc_cls, handler in exception_handlers.items():
     app.add_exception_handler(exc_cls, handler)

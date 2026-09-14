@@ -120,6 +120,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> anonymousSignup() async {
+    state = state.copyWith(status: AuthStatus.loading, error: null);
+    try {
+      final response = await _repository.anonymousSignup();
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        user: response.user,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        error: e.toString(),
+      );
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _repository.logout();
