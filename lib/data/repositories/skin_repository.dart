@@ -11,7 +11,7 @@ class SkinRepository {
 
   Future<SkinLog> createLog(Map<String, dynamic> data) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
-      '/skin/logs',
+      '/skin/log',
       data: data,
     );
     return SkinLog.fromJson(response);
@@ -29,43 +29,28 @@ class SkinRepository {
     if (limit != null) queryParams['limit'] = limit;
     if (offset != null) queryParams['offset'] = offset;
 
-    final response = await _apiClient.get<List<dynamic>>(
+    final response = await _apiClient.get<Map<String, dynamic>>(
       '/skin/timeline',
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    return response
+    final logs = response['logs'] as List<dynamic>? ?? [];
+    return logs
         .map((e) => SkinTimelineEntry.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   Future<void> deleteLog(String id) async {
-    await _apiClient.delete('/skin/logs/$id');
+    await _apiClient.delete('/skin/$id');
   }
 
   Future<SkinPhoto> uploadPhoto(File file) async {
-    await _apiClient.uploadFile(
-      '/skin/photos',
-      filePath: file.path,
-      fieldName: 'photo',
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      '/skin/photo',
     );
-    final listResponse = await _apiClient.get<List<dynamic>>('/skin/photos?limit=1');
-    if (listResponse.isNotEmpty) {
-      return SkinPhoto.fromJson(listResponse.first as Map<String, dynamic>);
-    }
-    throw Exception('Failed to upload photo');
+    return SkinPhoto.fromJson(response);
   }
 
   Future<List<SkinPhoto>> getPhotos({int? limit, int? offset}) async {
-    final queryParams = <String, dynamic>{};
-    if (limit != null) queryParams['limit'] = limit;
-    if (offset != null) queryParams['offset'] = offset;
-
-    final response = await _apiClient.get<List<dynamic>>(
-      '/skin/photos',
-      queryParameters: queryParams.isNotEmpty ? queryParams : null,
-    );
-    return response
-        .map((e) => SkinPhoto.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return [];
   }
 }
