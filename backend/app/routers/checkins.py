@@ -79,3 +79,42 @@ def update_checkin(checkin_id: int, data: DailyCheckinCreate, db: Session = Depe
     db.commit()
     db.refresh(checkin)
     return checkin
+
+
+@router.post("/hydration", status_code=201)
+def log_hydration(data: HydrationLogCreate, db: Session = Depends(get_db_session), current_user: User = Depends(get_current_active_user)):
+    today = date.today()
+    log = HydrationLog(
+        user_id=current_user.id,
+        date=today,
+        volume_ml=data.volume_ml,
+        tap_count=1,
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(log)
+    return {
+        "id": log.id,
+        "user_id": log.user_id,
+        "amount_ml": log.volume_ml,
+        "date": str(log.date),
+        "tap_count": log.tap_count,
+        "created_at": str(log.created_at) if log.created_at else None,
+    }
+
+
+@router.get("/hydration/today")
+def get_today_hydration(db: Session = Depends(get_db_session), current_user: User = Depends(get_current_active_user)):
+    today = date.today()
+    logs = db.query(HydrationLog).filter(
+        HydrationLog.user_id == current_user.id, HydrationLog.date == today
+    ).all()
+    serialized = [{
+        "id": log.id,
+        "user_id": log.user_id,
+        "amount_ml": log.volume_ml,
+        "date": str(log.date),
+        "tap_count": log.tap_count,
+        "created_at": str(log.created_at) if log.created_at else None,
+    } for log in logs]
+    return {"logs": serialized, "total_ml": sum(l.volume_ml for l in logs), "tap_count": len(logs)}

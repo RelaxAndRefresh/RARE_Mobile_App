@@ -11,11 +11,12 @@ class InsightRepository {
     final queryParams = <String, dynamic>{};
     if (limit != null) queryParams['limit'] = limit;
 
-    final response = await _apiClient.get<List<dynamic>>(
+    final response = await _apiClient.get<Map<String, dynamic>>(
       '/insights/biweekly',
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    return response
+    final insights = response['insights'] as List<dynamic>? ?? [];
+    return insights
         .map((e) => BiweeklyInsight.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -24,11 +25,12 @@ class InsightRepository {
     final queryParams = <String, dynamic>{};
     if (limit != null) queryParams['limit'] = limit;
 
-    final response = await _apiClient.get<List<dynamic>>(
+    final response = await _apiClient.get<Map<String, dynamic>>(
       '/insights/monthly',
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    return response
+    final insights = response['insights'] as List<dynamic>? ?? [];
+    return insights
         .map((e) => MonthlyInsight.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -38,11 +40,12 @@ class InsightRepository {
     if (limit != null) queryParams['limit'] = limit;
     if (offset != null) queryParams['offset'] = offset;
 
-    final response = await _apiClient.get<List<dynamic>>(
-      '/insights/pulse-feed',
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/insights/pulse',
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    return response
+    final insights = response['insights'] as List<dynamic>? ?? [];
+    return insights
         .map((e) => PulseFeedItem.fromJson(e as Map<String, dynamic>))
         .toList();
   }

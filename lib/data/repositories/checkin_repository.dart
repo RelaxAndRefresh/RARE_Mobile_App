@@ -9,7 +9,7 @@ class CheckinRepository {
 
   Future<DailyCheckin> submitAMCheckin(Map<String, dynamic> data) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
-      '/checkin/am',
+      '/checkins/am',
       data: {...data, 'checkin_type': 'am'},
     );
     return DailyCheckin.fromJson(response);
@@ -17,7 +17,7 @@ class CheckinRepository {
 
   Future<DailyCheckin> submitPMCheckin(Map<String, dynamic> data) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
-      '/checkin/pm',
+      '/checkins/pm',
       data: {...data, 'checkin_type': 'pm'},
     );
     return DailyCheckin.fromJson(response);
@@ -26,7 +26,7 @@ class CheckinRepository {
   Future<DailyCheckin?> getTodayCheckin() async {
     try {
       final response = await _apiClient.get<Map<String, dynamic>>(
-        '/checkin/today',
+        '/checkins/today',
       );
       return DailyCheckin.fromJson(response);
     } catch (e) {
@@ -36,7 +36,7 @@ class CheckinRepository {
 
   Future<DailyCheckin> updateCheckin(String id, Map<String, dynamic> data) async {
     final response = await _apiClient.put<Map<String, dynamic>>(
-      '/checkin/$id',
+      '/checkins/$id',
       data: data,
     );
     return DailyCheckin.fromJson(response);
@@ -44,17 +44,18 @@ class CheckinRepository {
 
   Future<HydrationLog> logHydration(Map<String, dynamic> data) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
-      '/checkin/hydration',
+      '/checkins/hydration',
       data: data,
     );
     return HydrationLog.fromJson(response);
   }
 
   Future<List<HydrationLog>> getTodayHydration() async {
-    final response = await _apiClient.get<List<dynamic>>(
-      '/checkin/hydration/today',
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/checkins/hydration/today',
     );
-    return response
+    final logs = response['logs'] as List<dynamic>? ?? [];
+    return logs
         .map((e) => HydrationLog.fromJson(e as Map<String, dynamic>))
         .toList();
   }

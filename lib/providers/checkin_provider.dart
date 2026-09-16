@@ -102,7 +102,12 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
     }
   }
 
+  static const int maxTapsPerDay = 8;
+
+  bool get hasReachedMaxTaps => state.todayHydration.length >= maxTapsPerDay;
+
   Future<void> logHydration(double amountMl) async {
+    if (hasReachedMaxTaps) return;
     state = state.copyWith(isLoading: true, error: null);
     try {
       final log = await _repository.logHydration({'amount_ml': amountMl});
