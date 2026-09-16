@@ -8,6 +8,7 @@ import '../../widgets/common/aura_widget.dart';
 import '../../widgets/common/hydration_vessel.dart';
 import '../../widgets/cards/rare_card.dart';
 import '../../core/utils/helpers.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/checkin_provider.dart';
 import '../../providers/notification_provider.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +30,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated) {
+        ref.read(checkinProvider.notifier).loadTodayData();
+        ref.read(notificationProvider.notifier).loadUnreadCount();
+      }
+    });
+
     final checkinState = ref.watch(checkinProvider);
     final notificationState = ref.watch(notificationProvider);
 
@@ -102,6 +110,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           context.go(RouteNames.optimizeShelf);
                         },
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.logout,
+                            color: AppColors.rose),
+                        onPressed: () async {
+                          await ref.read(authProvider.notifier).logout();
+                          if (context.mounted) {
+                            context.go(RouteNames.splashReturning);
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ],
@@ -142,27 +160,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: TextStyles.bodySmall,
                     ),
                     const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () {
-                        ref.read(checkinProvider.notifier).logHydration(250);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.rose),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '+ Tap to log 250ml',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.rose,
+                    Builder(
+                      builder: (context) {
+                        final isMaxed = checkinState.todayHydration.length >= 8;
+                        return GestureDetector(
+                          onTap: isMaxed ? null : () {
+                            ref.read(checkinProvider.notifier).logHydration(250);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isMaxed ? AppColors.grey : AppColors.rose,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              isMaxed ? 'Max taps reached for today' : '+ Tap to log 250ml',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isMaxed ? AppColors.grey : AppColors.rose,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ],
                 ),

@@ -15,10 +15,13 @@ class QuickLogScreen extends ConsumerStatefulWidget {
 }
 
 class _QuickLogScreenState extends ConsumerState<QuickLogScreen> {
-  final Set<String> _loggedItems = {};
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(skinProvider.notifier).loadTimeline());
+  }
 
   void _logItem(String type) async {
-    setState(() => _loggedItems.add(type));
     await ref.read(skinProvider.notifier).createLog({
       'tags': [type],
       'condition': type,
@@ -45,10 +48,30 @@ class _QuickLogScreenState extends ConsumerState<QuickLogScreen> {
     }
   }
 
+  Set<String> _getLoggedItemsToday(List<dynamic> timeline) {
+    final today = DateTime.now();
+    final logged = <String>{};
+    for (final entry in timeline) {
+      final log = entry.log;
+      if (log == null) continue;
+      final logDate = log.createdAt;
+      if (logDate.year == today.year && logDate.month == today.month && logDate.day == today.day) {
+        final tags = log.tags;
+        if (tags != null) {
+          for (final tag in tags) {
+            logged.add(tag);
+          }
+        }
+      }
+    }
+    return logged;
+  }
+
   @override
   Widget build(BuildContext context) {
     final skinState = ref.watch(skinProvider);
     final isLogging = skinState.isLoading;
+    final loggedItems = _getLoggedItemsToday(skinState.timeline);
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -63,19 +86,19 @@ class _QuickLogScreenState extends ConsumerState<QuickLogScreen> {
             _buildLogItem(
               icon: Icons.water_drop,
               label: 'Caffeine',
-              isLogged: _loggedItems.contains('Caffeine'),
+              isLogged: loggedItems.contains('Caffeine'),
               isLogging: isLogging,
             ),
             _buildLogItem(
               icon: Icons.water_drop,
               label: 'Alcohol',
-              isLogged: _loggedItems.contains('Alcohol'),
+              isLogged: loggedItems.contains('Alcohol'),
               isLogging: isLogging,
             ),
             _buildLogItem(
               icon: Icons.show_chart,
               label: 'Energy',
-              isLogged: _loggedItems.contains('Energy'),
+              isLogged: loggedItems.contains('Energy'),
               isLogging: isLogging,
             ),
             const SizedBox(height: 16),
