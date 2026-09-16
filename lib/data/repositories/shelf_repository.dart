@@ -8,24 +8,25 @@ class ShelfRepository {
       : _apiClient = apiClient ?? ApiClient();
 
   Future<List<ShelfItem>> getShelf() async {
-    final response = await _apiClient.get<List<dynamic>>('/shelf');
-    return response
+    final response = await _apiClient.get<Map<String, dynamic>>('/shelf/items');
+    final items = response['items'] as List<dynamic>? ?? [];
+    return items
         .map((e) => ShelfItem.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   Future<ShelfItem> confirmDepletion(String itemId, bool stillHave) async {
-    final response = await _apiClient.put<Map<String, dynamic>>(
-      '/shelf/$itemId/depletion',
-      data: {'still_have': stillHave},
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      '/shelf/depletion-confirm',
+      data: {'item_id': int.tryParse(itemId) ?? 0, 'is_depleted': !stillHave},
     );
     return ShelfItem.fromJson(response);
   }
 
   Future<ShelfItem> toggleAutoSwap(String itemId, bool enabled) async {
     final response = await _apiClient.put<Map<String, dynamic>>(
-      '/shelf/$itemId/auto-swap',
-      data: {'enabled': enabled},
+      '/shelf/auto-swap',
+      queryParameters: {'item_id': int.tryParse(itemId) ?? 0, 'enabled': enabled},
     );
     return ShelfItem.fromJson(response);
   }

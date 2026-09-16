@@ -17,22 +17,23 @@ class NotificationRepository {
     if (limit != null) queryParams['limit'] = limit;
     if (offset != null) queryParams['offset'] = offset;
 
-    final response = await _apiClient.get<List<dynamic>>(
-      '/notifications',
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/inbox',
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    return response
+    final notifications = response['notifications'] as List<dynamic>? ?? [];
+    return notifications
         .map((e) => Notification.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   Future<void> markAsRead(String id) async {
-    await _apiClient.put('/notifications/$id/read');
+    await _apiClient.put('/inbox/$id/read');
   }
 
   Future<int> getUnreadCount() async {
     final response = await _apiClient.get<Map<String, dynamic>>(
-      '/notifications/unread-count',
+      '/inbox/unread-count',
     );
     return response['count'] as int? ?? 0;
   }
