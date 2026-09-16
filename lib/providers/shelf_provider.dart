@@ -74,28 +74,20 @@ class ShelfNotifier extends StateNotifier<ShelfState> {
   }
 
   Future<void> confirmDepletion(String itemId, bool stillHave) async {
-    state = state.copyWith(isLoading: true, error: null);
     try {
-      final updated = await _repository.confirmDepletion(itemId, stillHave);
-      final items = state.shelfItems.map((item) {
-        return item.id == itemId ? updated : item;
-      }).toList();
-      state = state.copyWith(isLoading: false, shelfItems: items);
+      await _repository.confirmDepletion(itemId, stillHave);
+      await loadShelf();
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(error: e.toString());
     }
   }
 
   Future<void> toggleAutoSwap(String itemId, bool enabled) async {
-    state = state.copyWith(isLoading: true, error: null);
     try {
-      final updated = await _repository.toggleAutoSwap(itemId, enabled);
-      final items = state.shelfItems.map((item) {
-        return item.id == itemId ? updated : item;
-      }).toList();
-      state = state.copyWith(isLoading: false, shelfItems: items);
+      await _repository.toggleAutoSwap(itemId, enabled);
+      await loadShelf();
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(error: e.toString());
     }
   }
 
