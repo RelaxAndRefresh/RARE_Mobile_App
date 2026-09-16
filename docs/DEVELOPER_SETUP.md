@@ -28,6 +28,13 @@ git checkout Razeen_Backend
 ---
 
 ## 3. Flutter App Setup
+Run:
+
+```bash
+flutter doctor -v
+flutter --version
+dart --version
+```
 
 ### 3.1 Install Dependencies
 
@@ -115,6 +122,8 @@ Ensure PostgreSQL is running on port 5432 with a database named `rare_db`.
 
 ### 4.6 Run Migrations
 [Before performing this step, make sure you have rare_db database created in local postgres and update the DATABASE_URL in env example: postgresql://<username>@localhost:5432/rare_db]
+DATABASE_URL=postgresql://<username>:<password>@localhost:5432/rare_db
+
 ```bash
 alembic upgrade head
 ```
