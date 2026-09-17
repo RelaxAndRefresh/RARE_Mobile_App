@@ -1,15 +1,39 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, ConflictError
 from app.db.models import SkinLog, SkinPhoto
 
 
+QUICK_LOG_TAGS = {"Caffeine", "Alcohol", "Energy"}
+
+
+def has_quick_log_today(db: Session, user_id: int) -> bool:
+    today = date.today()
+    start = datetime.combine(today, datetime.min.time())
+    end = datetime.combine(today, datetime.max.time())
+    logs = db.query(SkinLog).filter(
+        SkinLog.user_id == user_id,
+        SkinLog.created_at >= start,
+        SkinLog.created_at <= end,
+    ).all()
+    for log in logs:
+        tags = log.tags or []
+        if any(t in QUICK_LOG_TAGS for t in tags):
+            return True
+    return False
+
+
 def create_log(db: Session, user_id: int, data: dict) -> SkinLog:
+    tags = data.get("tags", [])
+    is_quick_log = data.get("quick_log", False) or any(t in QUICK_LOG_TAGS for t in tags)
+    if is_quick_log and has_quick_log_today(db, user_id):
+        raise ConflictError("You have already logged today. One quick log per day.")
+
     log = SkinLog(
         user_id=user_id,
-        tags=data.get("tags", []),
+        tags=tags,
         notes=data.get("notes"),
         rating=data.get("rating"),
         photo_url=data.get("photo_url"),
