@@ -17,6 +17,11 @@ def create_log(data: SkinLogCreate, db: Session = Depends(get_db_session), curre
     return skin_service.create_log(db, current_user.id, data.model_dump())
 
 
+@router.get("/quick-log-status")
+def get_quick_log_status(db: Session = Depends(get_db_session), current_user: User = Depends(get_current_active_user)):
+    return {"logged_today": skin_service.has_quick_log_today(db, current_user.id)}
+
+
 @router.get("/timeline", response_model=SkinTimelineResponse)
 def get_timeline(
     page: int = Query(1, ge=1),

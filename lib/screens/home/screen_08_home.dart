@@ -139,57 +139,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 22),
-              RareCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'HYDRATION VESSEL',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    HydrationVessel(
-                      fillPercentage: hydrationPercent,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$tapsCount of $totalTapsGoal taps today — tap to fill',
-                      style: TextStyles.bodySmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Builder(
-                      builder: (context) {
-                        final isMaxed = checkinState.todayHydration.length >= 8;
-                        return GestureDetector(
-                          onTap: isMaxed ? null : () {
-                            ref.read(checkinProvider.notifier).logHydration(250);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: isMaxed ? AppColors.grey : AppColors.rose,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              isMaxed ? 'Max taps reached for today' : '+ Tap to log 250ml',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isMaxed ? AppColors.grey : AppColors.rose,
-                              ),
-                            ),
+              Center(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: RareCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'HYDRATION VESSEL',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.grey,
                           ),
-                        );
-                      },
+                        ),
+                        const SizedBox(height: 8),
+                        HydrationVessel(
+                          fillPercentage: hydrationPercent,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$tapsCount of $totalTapsGoal taps today — tap to fill',
+                          style: TextStyles.bodySmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Builder(
+                          builder: (context) {
+                            final isMaxed = checkinState.todayHydration.length >= 8;
+                            return GestureDetector(
+                              onTap: isMaxed ? null : () {
+                                ref.read(checkinProvider.notifier).logHydration(250);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: isMaxed ? AppColors.grey : AppColors.rose,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  isMaxed ? 'Max taps reached for today' : '+ Tap to log 250ml',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isMaxed ? AppColors.grey : AppColors.rose,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 16),

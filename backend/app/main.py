@@ -1,9 +1,6 @@
 from contextlib import asynccontextmanager
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import Response
-
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.exceptions import exception_handlers
@@ -22,27 +19,6 @@ ALLOWED_ORIGINS = [
 ]
 
 
-class DynamicCORSMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        origin = request.headers.get("origin", "")
-        is_wildcard = "*" in ALLOWED_ORIGINS
-        origin_allowed = is_wildcard or origin in ALLOWED_ORIGINS
-
-        if request.method == "OPTIONS":
-            response = Response(status_code=204)
-        else:
-            response = await call_next(request)
-
-        if origin and origin_allowed:
-            response.headers["Access-Control-Allow-Origin"] = origin if not is_wildcard else "*"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Methods"] = "*"
-            response.headers["Access-Control-Allow-Headers"] = "*"
-            response.headers["Access-Control-Max-Age"] = "600"
-
-        return response
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
@@ -56,7 +32,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(DynamicCORSMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 for exc_cls, handler in exception_handlers.items():
     app.add_exception_handler(exc_cls, handler)

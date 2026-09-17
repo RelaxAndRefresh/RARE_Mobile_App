@@ -10,12 +10,14 @@ class SkinState {
   final bool isLoading;
   final List<SkinTimelineEntry> timeline;
   final List<SkinPhoto> photos;
+  final bool hasQuickLoggedToday;
   final String? error;
 
   SkinState({
     this.isLoading = false,
     this.timeline = const [],
     this.photos = const [],
+    this.hasQuickLoggedToday = false,
     this.error,
   });
 
@@ -23,12 +25,14 @@ class SkinState {
     bool? isLoading,
     List<SkinTimelineEntry>? timeline,
     List<SkinPhoto>? photos,
+    bool? hasQuickLoggedToday,
     String? error,
   }) {
     return SkinState(
       isLoading: isLoading ?? this.isLoading,
       timeline: timeline ?? this.timeline,
       photos: photos ?? this.photos,
+      hasQuickLoggedToday: hasQuickLoggedToday ?? this.hasQuickLoggedToday,
       error: error,
     );
   }
@@ -65,6 +69,15 @@ class SkinNotifier extends StateNotifier<SkinState> {
     }
   }
 
+  Future<void> checkQuickLogStatus() async {
+    try {
+      final logged = await _repository.getQuickLogStatus();
+      state = state.copyWith(hasQuickLoggedToday: logged);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
   Future<void> loadPhotos() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -86,6 +99,7 @@ class SkinNotifier extends StateNotifier<SkinState> {
       state = state.copyWith(
         isLoading: false,
         timeline: [entry, ...state.timeline],
+        hasQuickLoggedToday: true,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

@@ -17,6 +17,13 @@ class SkinRepository {
     return SkinLog.fromJson(response);
   }
 
+  Future<bool> getQuickLogStatus() async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/skin/quick-log-status',
+    );
+    return response['logged_today'] == true;
+  }
+
   Future<List<SkinTimelineEntry>> getTimeline({
     DateTime? startDate,
     DateTime? endDate,

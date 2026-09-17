@@ -18,7 +18,9 @@ class _QuickLogScreenState extends ConsumerState<QuickLogScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(skinProvider.notifier).loadTimeline());
+    Future.microtask(() {
+      ref.read(skinProvider.notifier).checkQuickLogStatus();
+    });
   }
 
   void _logItem(String type) async {
@@ -30,10 +32,11 @@ class _QuickLogScreenState extends ConsumerState<QuickLogScreen> {
     if (!mounted) return;
     final error = ref.read(skinProvider).error;
     if (error != null) {
+      final alreadyLogged = error.contains('already logged');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not log. Try again.'),
-          backgroundColor: AppColors.terracotta,
+          content: Text(alreadyLogged ? 'Already logged today. One quick log per day.' : 'Could not log. Try again.'),
+          backgroundColor: alreadyLogged ? AppColors.mocha : AppColors.terracotta,
         ),
       );
       ref.read(skinProvider.notifier).clearError();
@@ -48,30 +51,11 @@ class _QuickLogScreenState extends ConsumerState<QuickLogScreen> {
     }
   }
 
-  Set<String> _getLoggedItemsToday(List<dynamic> timeline) {
-    final today = DateTime.now();
-    final logged = <String>{};
-    for (final entry in timeline) {
-      final log = entry.log;
-      if (log == null) continue;
-      final logDate = log.createdAt;
-      if (logDate.year == today.year && logDate.month == today.month && logDate.day == today.day) {
-        final tags = log.tags;
-        if (tags != null) {
-          for (final tag in tags) {
-            logged.add(tag);
-          }
-        }
-      }
-    }
-    return logged;
-  }
-
   @override
   Widget build(BuildContext context) {
     final skinState = ref.watch(skinProvider);
     final isLogging = skinState.isLoading;
-    final loggedItems = _getLoggedItemsToday(skinState.timeline);
+    final loggedToday = skinState.hasQuickLoggedToday;
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -86,24 +70,26 @@ class _QuickLogScreenState extends ConsumerState<QuickLogScreen> {
             _buildLogItem(
               icon: Icons.water_drop,
               label: 'Caffeine',
-              isLogged: loggedItems.contains('Caffeine'),
+              isLogged: loggedToday,
               isLogging: isLogging,
             ),
             _buildLogItem(
               icon: Icons.water_drop,
               label: 'Alcohol',
-              isLogged: loggedItems.contains('Alcohol'),
+              isLogged: loggedToday,
               isLogging: isLogging,
             ),
             _buildLogItem(
               icon: Icons.show_chart,
               label: 'Energy',
-              isLogged: loggedItems.contains('Energy'),
+              isLogged: loggedToday,
               isLogging: isLogging,
             ),
             const SizedBox(height: 16),
             Text(
-              'Time is inferred automatically — tap the entry again to adjust.',
+              loggedToday
+                  ? 'You have already logged today. Come back tomorrow.'
+                  : 'Time is inferred automatically — tap the entry again to adjust.',
               style: TextStyles.bodySmall,
               textAlign: TextAlign.center,
             ),
