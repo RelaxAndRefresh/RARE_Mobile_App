@@ -73,7 +73,7 @@ class _SplashReturningScreenState extends ConsumerState<SplashReturningScreen> {
                     PrimaryButton(
                       label: 'Sign In',
                       onPressed: () {
-                        _showLoginDialog(context);
+                        context.push(RouteNames.signIn);
                       },
                     ),
                     const SizedBox(height: 20),
@@ -86,7 +86,7 @@ class _SplashReturningScreenState extends ConsumerState<SplashReturningScreen> {
                     GhostButton(
                       label: 'Create Account',
                       onPressed: () {
-                        context.go(RouteNames.welcome);
+                        context.push(RouteNames.createAccount);
                       },
                     ),
                     if (authState.error != null) ...[
@@ -101,113 +101,6 @@ class _SplashReturningScreenState extends ConsumerState<SplashReturningScreen> {
                     ],
                   ],
                 ),
-        ),
-      ),
-    );
-  }
-
-  void _showLoginDialog(BuildContext context) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    bool isLoading = false;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.cream,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          ),
-          title: const Text(
-            'Sign In',
-            style: TextStyle(
-              fontFamily: 'Playfair Display',
-              fontSize: 18,
-              color: AppColors.mocha,
-            ),
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: const TextStyle(color: AppColors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                      borderSide: const BorderSide(color: AppColors.rose),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: const TextStyle(color: AppColors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                      borderSide: const BorderSide(color: AppColors.rose),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: AppColors.grey),
-              ),
-            ),
-            TextButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      final email = emailController.text.trim();
-                      final password = passwordController.text;
-                      if (email.isEmpty || password.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter email and password'),
-                            backgroundColor: AppColors.terracotta,
-                          ),
-                        );
-                        return;
-                      }
-                      setDialogState(() => isLoading = true);
-                      await ref.read(authProvider.notifier).login(
-                            email: email,
-                            password: password,
-                          );
-                      if (context.mounted) Navigator.pop(context);
-                    },
-              child: isLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text(
-                      'Sign In',
-                      style: TextStyle(color: AppColors.rose),
-                    ),
-            ),
-          ],
         ),
       ),
     );

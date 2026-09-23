@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AuthenticationError, ConflictError, NotFoundError
@@ -12,28 +13,40 @@ from app.core.security import (
 from app.db.models import User, RefreshToken, OnboardingProgress, CreditBalance
 
 
-def signup(db: Session, email: str = None, name: str = None, password: str = None) -> dict:
+def signup(db: Session, email: str = None, name: str = None, password: str = None, phone: str = None) -> dict:
     if email:
         existing = db.query(User).filter(User.email == email).first()
         if existing:
             raise ConflictError("Email already registered")
 
+    if phone:
+        existing = db.query(User).filter(User.phone == phone).first()
+        if existing:
+            raise ConflictError("Phone number already registered")
+
     user = User(
         email=email,
         name=name,
+        phone=phone,
         password_hash=get_password_hash(password) if password else get_password_hash("anonymous-dev-password"),
         is_anonymous=not password,
     )
     db.add(user)
-    db.flush()
 
-    onboarding = OnboardingProgress(user_id=user.id)
-    db.add(onboarding)
+    try:
+        db.flush()
 
-    credit = CreditBalance(user_id=user.id, balance=0)
-    db.add(credit)
+        onboarding = OnboardingProgress(user_id=user.id)
+        db.add(onboarding)
 
-    db.commit()
+        credit = CreditBalance(user_id=user.id, balance=0)
+        db.add(credit)
+
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ConflictError("Email or phone number already registered")
+
     db.refresh(user)
 
     return _create_tokens(db, user)
@@ -111,6 +124,7 @@ def _create_tokens(db: Session, user: User) -> dict:
             "id": user.id,
             "email": user.email,
             "name": user.name,
+            "phone": user.phone,
             "role": user.role.value if hasattr(user.role, "value") else user.role,
             "is_anonymous": user.is_anonymous,
         },

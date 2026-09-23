@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'route_names.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/splash/screen_37_splash_returning.dart';
+import '../../screens/auth/create_account_screen.dart';
+import '../../screens/auth/login_screen.dart';
 import '../../screens/onboarding/screen_01_welcome.dart';
 import '../../screens/onboarding/screen_02_soft_scan.dart';
 import '../../screens/onboarding/screen_03_account_sync.dart';
@@ -52,6 +54,8 @@ import '../../screens/error/screen_30_error_empty.dart';
 const _publicRoutes = <String>{
   '/',
   '/auth/splash',
+  '/auth/sign-in',
+  '/auth/create-account',
   '/onboarding/welcome',
   '/onboarding/soft-scan',
   '/onboarding/account-sync',
@@ -103,6 +107,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.welcome,
         name: 'welcome',
         builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.signIn,
+        name: 'signIn',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.createAccount,
+        name: 'createAccount',
+        builder: (context, state) => const CreateAccountScreen(),
       ),
       GoRoute(
         path: RouteNames.softScan,

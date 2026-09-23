@@ -7,6 +7,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=200)
     password: str = Field(min_length=6, max_length=128)
+    phone: Optional[str] = Field(default=None, max_length=20)
 
 
 class AnonymousSignup(BaseModel):
@@ -22,6 +23,7 @@ class UserResponse(BaseModel):
     id: int
     email: Optional[str] = None
     name: Optional[str] = None
+    phone: Optional[str] = None
     role: str
     is_anonymous: bool = False
 
