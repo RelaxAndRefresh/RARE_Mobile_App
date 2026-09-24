@@ -21,12 +21,16 @@ class AuthRepository {
   Future<AuthResponse> signup({
     required String email,
     required String password,
+    String? name,
+    String? phone,
   }) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/auth/signup',
       data: {
+        if (name != null && name.isNotEmpty) 'name': name,
         'email': email,
         'password': password,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
       },
     );
 

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/network/api_client.dart';
+import '../../core/network/api_exception.dart';
 import '../../data/models/api_models.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -49,6 +49,14 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
   return authState.status == AuthStatus.authenticated;
 });
 
+/// Turns any thrown object into a short, user-facing message.
+String friendlyErrorMessage(Object error) {
+  if (error is ApiException) {
+    return error.message;
+  }
+  return 'Something went wrong. Please try again.';
+}
+
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
 
@@ -93,7 +101,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
-        error: e.toString(),
+        error: friendlyErrorMessage(e),
       );
     }
   }
@@ -101,12 +109,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signup({
     required String email,
     required String password,
+    String? name,
+    String? phone,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
       final response = await _repository.signup(
         email: email,
         password: password,
+        name: name,
+        phone: phone,
       );
       state = AuthState(
         status: AuthStatus.authenticated,
@@ -115,7 +127,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
-        error: e.toString(),
+        error: friendlyErrorMessage(e),
       );
     }
   }

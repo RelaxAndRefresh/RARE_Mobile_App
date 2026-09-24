@@ -129,4 +129,8 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
   void clearError() {
     state = state.copyWith(error: null);
   }
+
+  void reset() {
+    state = CheckinState();
+  }
 }

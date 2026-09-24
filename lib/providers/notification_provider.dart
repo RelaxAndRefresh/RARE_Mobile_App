@@ -116,4 +116,8 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
   void clearError() {
     state = state.copyWith(error: null);
   }
+
+  void reset() {
+    state = NotificationState();
+  }
 }

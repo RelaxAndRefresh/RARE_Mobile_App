@@ -11,7 +11,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def signup(data: UserCreate, db: Session = Depends(get_db_session)):
-    return auth_service.signup(db, email=data.email, name=data.name, password=data.password)
+    return auth_service.signup(db, email=data.email, name=data.name, password=data.password, phone=data.phone)
 
 
 @router.post("/anonymous", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -41,6 +41,7 @@ def me(current_user: User = Depends(get_current_active_user)):
         "id": current_user.id,
         "email": current_user.email,
         "name": current_user.name,
+        "phone": current_user.phone,
         "role": current_user.role.value if hasattr(current_user.role, "value") else current_user.role,
         "is_anonymous": current_user.is_anonymous,
     }

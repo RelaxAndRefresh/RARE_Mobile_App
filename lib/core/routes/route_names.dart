@@ -37,6 +37,8 @@ class RouteNames {
   static const String skinProgressTimeline = '/profile/skin-timeline';
   static const String quietInbox = '/home/quiet-inbox';
   static const String splashReturning = '/auth/splash';
+  static const String signIn = '/auth/sign-in';
+  static const String createAccount = '/auth/create-account';
   static const String legalDocuments = '/legal/documents';
   static const String checkoutState = '/checkout/state';
   static const String helpSupport = '/support/help';

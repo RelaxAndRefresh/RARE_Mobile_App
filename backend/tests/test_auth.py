@@ -39,6 +39,22 @@ async def test_signup_duplicate_email(client, test_user):
 
 
 @pytest.mark.asyncio
+async def test_signup_duplicate_phone(client):
+    first = await client.post(
+        "/api/v1/auth/signup",
+        json={"email": "first@example.com", "name": "First User", "password": "Pass123!", "phone": "8180808575"},
+    )
+    assert first.status_code == 201
+
+    second = await client.post(
+        "/api/v1/auth/signup",
+        json={"email": "second@example.com", "name": "Second User", "password": "Pass123!", "phone": "8180808575"},
+    )
+    assert second.status_code == 409
+    assert "phone" in second.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
 async def test_signup_validation_error(client):
     response = await client.post(
         "/api/v1/auth/signup",
