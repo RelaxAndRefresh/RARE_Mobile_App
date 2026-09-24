@@ -156,7 +156,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
-        context.go(RouteNames.home);
+        context.go(RouteNames.welcome);
       }
     });
 
