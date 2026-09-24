@@ -84,10 +84,11 @@ def update_checkin(checkin_id: int, data: DailyCheckinCreate, db: Session = Depe
 @router.post("/hydration", status_code=201)
 def log_hydration(data: HydrationLogCreate, db: Session = Depends(get_db_session), current_user: User = Depends(get_current_active_user)):
     today = date.today()
+    volume = data.volume_ml if data.volume_ml else (data.amount_ml or 0)
     log = HydrationLog(
         user_id=current_user.id,
         date=today,
-        volume_ml=data.volume_ml,
+        volume_ml=volume,
         tap_count=1,
     )
     db.add(log)

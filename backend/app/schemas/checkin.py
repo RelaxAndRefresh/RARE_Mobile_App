@@ -33,6 +33,7 @@ class DailyCheckinResponse(BaseModel):
 
 class HydrationLogCreate(BaseModel):
     volume_ml: int = 0
+    amount_ml: Optional[int] = None
 
 
 class HydrationLogResponse(BaseModel):

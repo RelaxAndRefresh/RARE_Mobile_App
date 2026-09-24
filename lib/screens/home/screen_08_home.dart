@@ -162,6 +162,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           '$tapsCount of $totalTapsGoal taps today — tap to fill',
                           style: TextStyles.bodySmall,
                         ),
+                        if (checkinState.error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              'DEBUG: ${checkinState.error}',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.red,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         const SizedBox(height: 8),
                         Builder(
                           builder: (context) {

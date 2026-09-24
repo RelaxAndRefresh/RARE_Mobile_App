@@ -13,11 +13,15 @@ class RAREApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
 
-    // Reset per-user data whenever the signed-in identity changes
-    // (logout or a different account logging in), so one account never
-    // sees another account's cached data.
+    // Reset per-user data on logout or account switch, so one account never
+    // sees another account's cached data. Do NOT reset on a fresh login —
+    // that would wipe today's hydration/notification count back to 0.
     ref.listen(authProvider, (previous, next) {
-      if (previous?.user?.id != next.user?.id) {
+      final prevId = previous?.user?.id;
+      final nextId = next.user?.id;
+      final loggedOut = prevId != null && next.user == null;
+      final switchedAccount = prevId != null && nextId != null && prevId != nextId;
+      if (loggedOut || switchedAccount) {
         ref.read(checkinProvider.notifier).reset();
         ref.read(notificationProvider.notifier).reset();
       }

@@ -53,21 +53,28 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
   CheckinNotifier(this._repository) : super(CheckinState());
 
   Future<void> loadTodayData() async {
+    await Future<void>.value();
     state = state.copyWith(isLoading: true, error: null);
     try {
+      print('[DBG] loadTodayData start');
       final checkin = await _repository.getTodayCheckin();
+      print('[DBG] getTodayCheckin -> ${checkin == null ? 'null' : checkin.checkinType}');
       final hydration = await _repository.getTodayHydration();
+      print('[DBG] getTodayHydration -> len=${hydration.length}');
       final totalMl = hydration.fold<double>(
         0,
         (sum, log) => sum + log.amountMl,
       );
+      print('[DBG] loadTodayData OK -> hydration=${hydration.length} totalMl=$totalMl');
       state = state.copyWith(
         isLoading: false,
         todayCheckin: checkin,
         todayHydration: hydration,
         totalHydrationMl: totalMl,
       );
-    } catch (e) {
+    } catch (e, st) {
+      print('[DBG] loadTodayData ERROR -> ${e.toString()}');
+      print(st);
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -110,7 +117,7 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
     if (hasReachedMaxTaps) return;
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final log = await _repository.logHydration({'amount_ml': amountMl});
+      final log = await _repository.logHydration(amountMl);
       final updatedHydration = [...state.todayHydration, log];
       final totalMl = updatedHydration.fold<double>(
         0,

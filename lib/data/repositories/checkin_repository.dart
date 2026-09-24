@@ -30,6 +30,7 @@ class CheckinRepository {
       );
       return DailyCheckin.fromJson(response);
     } catch (e) {
+      print('[DBG] getTodayCheckin THREW -> $e');
       return null;
     }
   }
@@ -42,10 +43,10 @@ class CheckinRepository {
     return DailyCheckin.fromJson(response);
   }
 
-  Future<HydrationLog> logHydration(Map<String, dynamic> data) async {
+  Future<HydrationLog> logHydration(double amountMl) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/checkins/hydration',
-      data: data,
+      data: {'volume_ml': amountMl},
     );
     return HydrationLog.fromJson(response);
   }
